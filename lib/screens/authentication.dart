@@ -157,7 +157,7 @@ class _SignUpState extends State<SignUp> {
                           maxWidth: 150,
                         );
                         setState(() {
-                          pickedImage = pickedImageFile;
+                          resourceHelper[2] = pickedImageFile;
                         });
                       },
                       child: Stack(
