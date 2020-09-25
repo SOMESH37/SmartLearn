@@ -147,7 +147,6 @@ class _SignUpState extends State<SignUp> {
               Container(
                 width: gapW * 0.9,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     GestureDetector(
                       onTap: () async {
@@ -157,7 +156,7 @@ class _SignUpState extends State<SignUp> {
                           maxWidth: 150,
                         );
                         setState(() {
-                          resourceHelper[2] = pickedImageFile;
+                          pickedImage = pickedImageFile;
                         });
                       },
                       child: Stack(
@@ -181,6 +180,9 @@ class _SignUpState extends State<SignUp> {
                           ),
                         ],
                       ),
+                    ),
+                    SizedBox(
+                      height: gapH * 0.06,
                     ),
                     Form(
                       key: _formKey,
@@ -247,7 +249,7 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
               SizedBox(
-                height: gapH * 0.02,
+                height: gapH * 0.03,
               ),
               FlatButton(
                 padding: EdgeInsets.symmetric(
@@ -279,7 +281,7 @@ class _SignUpState extends State<SignUp> {
               Divider(
                 color: Colors.grey,
                 thickness: 1,
-                height: gapH * 0.04,
+                height: gapH * 0.05,
                 endIndent: gapW * 0.4,
                 indent: gapW * 0.4,
               ),
@@ -432,9 +434,15 @@ class Login extends StatelessWidget {
   }
 }
 
-class Otp extends StatelessWidget {
+class Otp extends StatefulWidget {
+  @override
+  _OtpState createState() => _OtpState();
+}
+
+class _OtpState extends State<Otp> {
   var txt = 'Confirm OTP';
   var btext = 'Reset password';
+  bool isStu = true;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +470,7 @@ class Otp extends StatelessWidget {
                 style: TextStyle(color: Colors.grey, fontSize: 20),
               ),
               SizedBox(
-                height: gapH * 0.2,
+                height: gapH * 0.15,
               ),
               Container(
                 width: gapW * 0.7,
@@ -480,8 +488,79 @@ class Otp extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                height: gapH * 0.1,
+                height: gapH * 0.05,
               ),
+              (type == 1)
+                  ? Column(
+                      children: [
+                        Text(
+                          'Please choose your role',
+                          style: TextStyle(
+                            //letterSpacing: 1.5,
+                            color: Colors.grey,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ChoiceChip(
+                              selectedColor: Colors.blue[200],
+                              padding: EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 10,
+                              ),
+                              label: Text(
+                                'Student',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: colors[7],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              selected: isStu,
+                              onSelected: (p) {
+                                setState(() {
+                                  isStu = p;
+                                  print('object');
+                                });
+                              },
+                            ),
+                            SizedBox(
+                              width: gapW * 0.04,
+                            ),
+                            ChoiceChip(
+                              selectedColor: Colors.blue[200],
+                              padding: EdgeInsets.symmetric(
+                                vertical: 4,
+                                horizontal: 10,
+                              ),
+                              label: Text(
+                                'Teacher',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: colors[7],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              selected: !isStu,
+                              onSelected: (p) {
+                                setState(() {
+                                  isStu = !p;
+                                  print('teacher');
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        SizedBox(
+                          height: gapH * 0.05,
+                        ),
+                      ],
+                    )
+                  : SizedBox(
+                      height: gapH * 0.05,
+                    ),
               FlatButton(
                 padding: EdgeInsets.symmetric(
                   horizontal: 30,
@@ -629,7 +708,7 @@ class _ChangePwdState extends State<ChangePwd> {
 }
 
 String validateName(value) {
-  if (value.length < 2)
+  if (value.length < 2 || value.length > 14)
     return 'Weird Name';
   else
     return null;
