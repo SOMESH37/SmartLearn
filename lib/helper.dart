@@ -348,3 +348,26 @@ tileInfo(context, index) {
     ],
   );
 }
+
+tileTodo(context, index) {
+  return ListTile(
+    contentPadding: EdgeInsets.fromLTRB(
+      50,
+      8,
+      50,
+      8,
+    ),
+    title: Text(
+      'Task ${index + 1}',
+      style: TextStyle(
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+    subtitle: Text(
+      index == 2
+          ? 'Efficiently mesh strategic collaboration and idea-sharing whereas standards compliant ideas. Globally negotiate installed base information through superior collaboration and idea-sharing.'
+          : '',
+      style: TextStyle(),
+    ),
+  );
+}

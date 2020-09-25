@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import '../helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'home.dart';
 
 var gapH;
 var gapW;
@@ -379,6 +380,12 @@ class Login extends StatelessWidget {
                           ),
                           onPressed: () {
                             //login
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => Home(),
+                              ),
+                              (_) => false,
+                            );
                           },
                           child: Text(
                             'Login',
@@ -569,8 +576,12 @@ class _OtpState extends State<Otp> {
                   if (type == 1)
 
                     //SIGN UP
-
-                    ;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (context) => Home(),
+                      ),
+                      (_) => false,
+                    );
                   else {
                     Navigator.pushNamed(context, '/changepwd');
                   }

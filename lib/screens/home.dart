@@ -479,7 +479,7 @@ class Join extends StatelessWidget {
               style: TextStyle(color: Colors.grey, fontSize: 20),
             ),
             SizedBox(
-              height: 50,
+              height: 75,
             ),
             TextFormField(
               decoration: InputDecoration(
