@@ -6,9 +6,9 @@ import 'package:flutter/services.dart';
 import '../helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'home.dart';
+import '../model/auth_net.dart';
 
-var gapH;
-var gapW;
+var gapH, gapW, email, pwd;
 File pickedImage;
 var type = 0;
 var high = AppBar().preferredSize.height;
@@ -134,6 +134,7 @@ class _SignUpState extends State<SignUp> {
   final GlobalKey<FormState> _formKey = GlobalKey();
   bool _autoval = false;
   final _passwordController = TextEditingController();
+  var name;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,7 +192,6 @@ class _SignUpState extends State<SignUp> {
                       child: Column(
                         children: [
                           TextFormField(
-                            keyboardType: TextInputType.name,
                             decoration: InputDecoration(
                               icon: Icon(
                                 Icons.portrait,
@@ -201,7 +201,9 @@ class _SignUpState extends State<SignUp> {
                                   color: Colors.grey[400], fontSize: 12),
                             ),
                             validator: validateName,
-                            onSaved: (value) {},
+                            onChanged: (value) {
+                              name = value;
+                            },
                           ),
                           TextFormField(
                             keyboardType: TextInputType.emailAddress,
@@ -212,7 +214,9 @@ class _SignUpState extends State<SignUp> {
                                   color: Colors.grey[400], fontSize: 12),
                             ),
                             validator: validateEmail,
-                            onSaved: (value) {},
+                            onChanged: (value) {
+                              email = value;
+                            },
                           ),
                           TextFormField(
                             keyboardType: TextInputType.visiblePassword,
@@ -225,7 +229,9 @@ class _SignUpState extends State<SignUp> {
                             obscureText: true,
                             controller: _passwordController,
                             validator: validatePwd,
-                            onSaved: (value) {},
+                            onChanged: (value) {
+                              pwd = value;
+                            },
                           ),
                           TextFormField(
                             keyboardType: TextInputType.visiblePassword,
@@ -241,7 +247,6 @@ class _SignUpState extends State<SignUp> {
                                 (value != _passwordController.text)
                                     ? 'Passwords do not match!'
                                     : null,
-                            onSaved: (value) {},
                           ),
                         ],
                       ),
@@ -257,14 +262,16 @@ class _SignUpState extends State<SignUp> {
                   horizontal: 30,
                 ),
                 onPressed: () {
+                  print('$name $email $pwd');
                   if (!_formKey.currentState.validate()) {
                     setState(() {
                       _autoval = true;
                     });
-
+                    HapticFeedback.vibrate();
                     return;
                   }
                   type = 1;
+                  Auth.sign(name, email, pwd, null);
                   Navigator.pushNamed(context, '/otp');
                 },
                 child: Text(
@@ -316,7 +323,14 @@ class _SignUpState extends State<SignUp> {
   }
 }
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
+  @override
+  _LoginState createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+  bool autoE = false, autoP = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -341,11 +355,16 @@ class Login extends StatelessWidget {
                         labelStyle:
                             TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
-                      onSaved: (value) {},
+                      onChanged: (value) {
+                        email = value;
+                      },
                       validator: validateEmail,
+                      autovalidate: autoE,
                     ),
                     TextFormField(
                       keyboardType: TextInputType.visiblePassword,
+                      validator: validatePwd,
+                      autovalidate: autoP,
                       decoration: InputDecoration(
                         icon: Icon(Icons.lock),
                         labelText: 'Password',
@@ -353,7 +372,9 @@ class Login extends StatelessWidget {
                             TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                       obscureText: true,
-                      onSaved: (value) {},
+                      onChanged: (value) {
+                        pwd = value;
+                      },
                     ),
                     SizedBox(
                       height: gapH * 0.07,
@@ -379,7 +400,8 @@ class Login extends StatelessWidget {
                             horizontal: 30,
                           ),
                           onPressed: () {
-                            //login
+                            Auth.login(email, pwd);
+
                             Navigator.of(context).pushAndRemoveUntil(
                               MaterialPageRoute(
                                 builder: (context) => Home(),
@@ -450,7 +472,7 @@ class _OtpState extends State<Otp> {
   var txt = 'Confirm OTP';
   var btext = 'Reset password';
   bool isStu = true;
-
+  var otp;
   @override
   Widget build(BuildContext context) {
     if (type == 1) {
@@ -491,11 +513,13 @@ class _OtpState extends State<Otp> {
                     labelStyle:
                         TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
-                  onSaved: (value) {},
+                  onChanged: (value) {
+                    otp = value;
+                  },
                 ),
               ),
               SizedBox(
-                height: gapH * 0.05,
+                height: gapH * 0.065,
               ),
               (type == 1)
                   ? Column(
@@ -512,24 +536,24 @@ class _OtpState extends State<Otp> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             ChoiceChip(
-                              selectedColor: Colors.blue[200],
+                              selectedColor: Colors.blue,
+                              pressElevation: 0,
                               padding: EdgeInsets.symmetric(
                                 vertical: 4,
-                                horizontal: 10,
+                                horizontal: 20,
                               ),
                               label: Text(
                                 'Student',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  color: colors[7],
-                                  fontWeight: FontWeight.w500,
+                                  //    fontSize: 16,
+                                  color: isStu ? colors[6] : colors[7],
+                                  //   fontWeight: FontWeight.w500,
                                 ),
                               ),
                               selected: isStu,
                               onSelected: (p) {
                                 setState(() {
-                                  isStu = p;
-                                  print('object');
+                                  isStu = true;
                                 });
                               },
                             ),
@@ -537,24 +561,24 @@ class _OtpState extends State<Otp> {
                               width: gapW * 0.04,
                             ),
                             ChoiceChip(
-                              selectedColor: Colors.blue[200],
+                              selectedColor: Colors.blue,
+                              pressElevation: 0,
                               padding: EdgeInsets.symmetric(
                                 vertical: 4,
-                                horizontal: 10,
+                                horizontal: 20,
                               ),
                               label: Text(
                                 'Teacher',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  color: colors[7],
-                                  fontWeight: FontWeight.w500,
+                                  // fontSize: 16,
+                                  color: !isStu ? colors[6] : colors[7],
+                                  // fontWeight: FontWeight.w500,
                                 ),
                               ),
                               selected: !isStu,
                               onSelected: (p) {
                                 setState(() {
-                                  isStu = !p;
-                                  print('teacher');
+                                  isStu = false;
                                 });
                               },
                             ),
@@ -573,16 +597,20 @@ class _OtpState extends State<Otp> {
                   horizontal: 30,
                 ),
                 onPressed: () {
-                  if (type == 1)
-
-                    //SIGN UP
+                  if (otp == null) {
+                    HapticFeedback.vibrate();
+                    return;
+                  }
+                  if (type == 1) {
+                    //print("$email $isStu");
+                    Auth.otpS(email, otp, !isStu);
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (context) => Home(),
                       ),
                       (_) => false,
                     );
-                  else {
+                  } else {
                     Navigator.pushNamed(context, '/changepwd');
                   }
                 },
@@ -616,7 +644,7 @@ class _ChangePwdState extends State<ChangePwd> {
   final _passwordControl = TextEditingController();
   final _passwordControl2 = TextEditingController();
   bool _autoval = false;
-
+  var pwd;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -656,7 +684,6 @@ class _ChangePwdState extends State<ChangePwd> {
                       validator: validatePwd,
                       autovalidate: _autoval,
                       controller: _passwordControl,
-                      onSaved: (value) {},
                     ),
                     TextFormField(
                       keyboardType: TextInputType.visiblePassword,
@@ -719,14 +746,14 @@ class _ChangePwdState extends State<ChangePwd> {
 }
 
 String validateName(value) {
-  if (value.length < 2 || value.length > 14)
-    return 'Weird Name';
+  if (!RegExp(r'^[A-Z][a-z A-Z]{2,14}$').hasMatch(value))
+    return 'Name format';
   else
     return null;
 }
 
 String validatePwd(value) {
-  if (value.length < 5)
+  if (value.length < 4)
     return 'Password is too short!';
   else if (value.length > 10)
     return 'Password is too long!';
@@ -737,7 +764,7 @@ String validatePwd(value) {
 String validateEmail(value) {
   Pattern pattern =
       r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-  RegExp _regex = new RegExp(pattern);
+  RegExp _regex = RegExp(pattern);
   if (!_regex.hasMatch(value))
     return 'Enter valid email';
   else
