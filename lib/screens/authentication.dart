@@ -135,6 +135,7 @@ class _SignUpState extends State<SignUp> {
   bool _autoval = false;
   final _passwordController = TextEditingController();
   var name;
+  bool isLoad = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -257,35 +258,47 @@ class _SignUpState extends State<SignUp> {
               SizedBox(
                 height: gapH * 0.03,
               ),
-              FlatButton(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                onPressed: () {
-                  print('$name $email $pwd');
-                  if (!_formKey.currentState.validate()) {
-                    setState(() {
-                      _autoval = true;
-                    });
-                    HapticFeedback.vibrate();
-                    return;
-                  }
-                  type = 1;
-                  Auth.sign(name, email, pwd, null);
-                  Navigator.pushNamed(context, '/otp');
-                },
-                child: Text(
-                  'Sign Up',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                color: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+              isLoad
+                  ? CircularProgressIndicator()
+                  : FlatButton(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30,
+                      ),
+                      onPressed: () async {
+                        print('$name $email $pwd');
+                        if (!_formKey.currentState.validate()) {
+                          setState(() {
+                            _autoval = true;
+                          });
+                          HapticFeedback.vibrate();
+                          return;
+                        }
+                        type = 1;
+                        setState(() {
+                          isLoad = true;
+                        });
+                        var res = await Auth.sign(name, email, pwd, null);
+                        if (res > -10) {
+                          //ERROR DIALOG res==226 -> email in use
+                          //ERROR DIALOG res==-1 -> something went wrong
+                          setState(() {
+                            isLoad = false;
+                          });
+                          if (res == 201) Navigator.pushNamed(context, '/otp');
+                        }
+                      },
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      color: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
               Divider(
                 color: Colors.grey,
                 thickness: 1,
@@ -329,8 +342,9 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  bool autoE = false, autoP = false;
-
+  bool autoE = false, autoP = false, isLoad = false;
+  final GlobalKey<FormState> _emailKey = GlobalKey();
+  final GlobalKey<FormState> _pwdKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -347,83 +361,131 @@ class _LoginState extends State<Login> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    TextFormField(
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        icon: Icon(Icons.email),
-                        labelText: 'Email address',
-                        labelStyle:
-                            TextStyle(color: Colors.grey[400], fontSize: 12),
+                    Form(
+                      key: _emailKey,
+                      child: TextFormField(
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.email),
+                          labelText: 'Email address',
+                          labelStyle:
+                              TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        onChanged: (value) {
+                          email = value;
+                        },
+                        validator: validateEmail,
+                        autovalidate: autoE,
                       ),
-                      onChanged: (value) {
-                        email = value;
-                      },
-                      validator: validateEmail,
-                      autovalidate: autoE,
                     ),
-                    TextFormField(
-                      keyboardType: TextInputType.visiblePassword,
-                      validator: validatePwd,
-                      autovalidate: autoP,
-                      decoration: InputDecoration(
-                        icon: Icon(Icons.lock),
-                        labelText: 'Password',
-                        labelStyle:
-                            TextStyle(color: Colors.grey[400], fontSize: 12),
+                    Form(
+                      key: _pwdKey,
+                      child: TextFormField(
+                        keyboardType: TextInputType.visiblePassword,
+                        validator: validatePwd,
+                        autovalidate: autoP,
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.lock),
+                          labelText: 'Password',
+                          labelStyle:
+                              TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        obscureText: true,
+                        onChanged: (value) {
+                          pwd = value;
+                        },
                       ),
-                      obscureText: true,
-                      onChanged: (value) {
-                        pwd = value;
-                      },
                     ),
                     SizedBox(
                       height: gapH * 0.07,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            type = 2;
-                            Navigator.pushNamed(context, '/otp');
-                          },
-                          child: Text(
-                            'Forgot password?',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        ),
-                        SizedBox(
-                          width: gapW * 0.3,
-                        ),
-                        FlatButton(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 30,
-                          ),
-                          onPressed: () {
-                            Auth.login(email, pwd);
-
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (context) => Home(),
+                    isLoad
+                        ? CircularProgressIndicator()
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  if (!_emailKey.currentState.validate()) {
+                                    setState(() {
+                                      autoP = false;
+                                      autoE = true;
+                                    });
+                                    return;
+                                  }
+                                  type = 2;
+                                  setState(() {
+                                    isLoad = true;
+                                  });
+                                  var res = await Auth.otpfPwd(email);
+                                  if (res > -10) {
+                                    //ERROR DIALOG res==404 -> email not avail
+                                    //ERROR DIALOG res==-1 -> something went wrong
+                                    setState(() {
+                                      isLoad = false;
+                                    });
+                                    if (res == 200)
+                                      Navigator.pushNamed(context, '/otp');
+                                  }
+                                },
+                                child: Text(
+                                  'Forgot password?',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                               ),
-                              (_) => false,
-                            );
-                          },
-                          child: Text(
-                            'Login',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
+                              SizedBox(
+                                width: gapW * 0.3,
+                              ),
+                              FlatButton(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 30,
+                                ),
+                                onPressed: () async {
+                                  if (!_emailKey.currentState.validate() ||
+                                      !_pwdKey.currentState.validate()) {
+                                    setState(() {
+                                      autoE = true;
+                                      autoP = true;
+                                    });
+                                    return;
+                                  }
+
+                                  setState(() {
+                                    isLoad = true;
+                                  });
+
+                                  var res = await Auth.login(email, pwd);
+                                  if (res > -10) {
+                                    //ERROR DIALOG res==226 -> email in use
+                                    //ERROR DIALOG res==-1 -> something went wrong
+                                    setState(() {
+                                      isLoad = false;
+                                    });
+                                    if (res == 201) {
+                                      // Navigator.of(context).pushAndRemoveUntil(
+                                      //   MaterialPageRoute(
+                                      //     builder: (context) => Home(),
+                                      //   ),
+                                      //   (_) => false,
+                                      // );
+                                    }
+                                  }
+                                },
+                                child: Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                color: Colors.blue,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100),
+                                  //side: BorderSide(color: Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
-                          color: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
-                            //side: BorderSide(color: Colors.red),
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -471,7 +533,7 @@ class Otp extends StatefulWidget {
 class _OtpState extends State<Otp> {
   var txt = 'Confirm OTP';
   var btext = 'Reset password';
-  bool isStu = true;
+  bool isStu = true, isLoad = false;
   var otp;
   @override
   Widget build(BuildContext context) {
@@ -592,40 +654,63 @@ class _OtpState extends State<Otp> {
                   : SizedBox(
                       height: gapH * 0.05,
                     ),
-              FlatButton(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                onPressed: () {
-                  if (otp == null) {
-                    HapticFeedback.vibrate();
-                    return;
-                  }
-                  if (type == 1) {
-                    //print("$email $isStu");
-                    Auth.otpS(email, otp, !isStu);
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => Home(),
+              isLoad
+                  ? CircularProgressIndicator()
+                  : FlatButton(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30,
                       ),
-                      (_) => false,
-                    );
-                  } else {
-                    Navigator.pushNamed(context, '/changepwd');
-                  }
-                },
-                child: Text(
-                  btext,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                color: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+                      onPressed: () async {
+                        if (otp == null) {
+                          HapticFeedback.vibrate();
+                          return;
+                        }
+                        setState(() {
+                          isLoad = true;
+                        });
+                        if (type == 1) {
+                          print('$email $isStu');
+                          var res = await Auth.fPwd(email, otp);
+                          if (res > -10) {
+                            //ERROR DIALOG res==400  wrong otp
+                            //ERROR DIALOG res==-1 -> something went wrong
+                            setState(() {
+                              isLoad = false;
+                            });
+                            //if(res==201) {Navigator.of(context).pushAndRemoveUntil(
+                            //   MaterialPageRoute(
+                            //     builder: (context) => Home(),
+                            //   ),
+                            //   (_) => false,
+                            // );}
+                          }
+                        } else {
+                          print('$email $otp');
+                          var res = await Auth.fPwd(email, otp);
+                          if (res > -10) {
+                            //ERROR DIALOG res==400  wrong otp
+                            //ERROR DIALOG res==-1 -> something went wrong
+                            setState(() {
+                              isLoad = false;
+                            });
+                            if (res == 200) {
+                              Navigator.pushNamed(context, '/changepwd');
+                            }
+                          }
+                        }
+                      },
+                      child: Text(
+                        btext,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      color: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
               svgPicture,
             ],
           ),
@@ -642,8 +727,8 @@ class ChangePwd extends StatefulWidget {
 
 class _ChangePwdState extends State<ChangePwd> {
   final _passwordControl = TextEditingController();
-  final _passwordControl2 = TextEditingController();
-  bool _autoval = false;
+  final GlobalKey<FormState> _formK = GlobalKey();
+  bool _autoval = false, isLoad = false;
   var pwd;
   @override
   Widget build(BuildContext context) {
@@ -670,72 +755,84 @@ class _ChangePwdState extends State<ChangePwd> {
               ),
               Container(
                 width: gapW * 0.9,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      keyboardType: TextInputType.visiblePassword,
-                      decoration: InputDecoration(
-                        icon: Icon(Icons.lock),
-                        labelText: 'Password',
-                        labelStyle:
-                            TextStyle(color: Colors.grey[400], fontSize: 12),
+                child: Form(
+                  key: _formK,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        keyboardType: TextInputType.visiblePassword,
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.lock),
+                          labelText: 'Password',
+                          labelStyle:
+                              TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        obscureText: true,
+                        validator: validatePwd,
+                        autovalidate: _autoval,
+                        controller: _passwordControl,
+                        onChanged: (value) {
+                          pwd = value;
+                        },
                       ),
-                      obscureText: true,
-                      validator: validatePwd,
-                      autovalidate: _autoval,
-                      controller: _passwordControl,
-                    ),
-                    TextFormField(
-                      keyboardType: TextInputType.visiblePassword,
-                      decoration: InputDecoration(
-                        icon: Icon(Icons.lock),
-                        labelText: 'Confirm password',
-                        labelStyle:
-                            TextStyle(color: Colors.grey[400], fontSize: 12),
+                      TextFormField(
+                        keyboardType: TextInputType.visiblePassword,
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.lock),
+                          labelText: 'Confirm password',
+                          labelStyle:
+                              TextStyle(color: Colors.grey[400], fontSize: 12),
+                        ),
+                        obscureText: true,
+                        autovalidate: _autoval,
+                        validator: (value) => (value != _passwordControl.text)
+                            ? 'Passwords do not match!'
+                            : null,
                       ),
-                      obscureText: true,
-                      controller: _passwordControl2,
-                      autovalidate: _autoval,
-                      validator: (value) => (value != _passwordControl.text)
-                          ? 'Passwords do not match!'
-                          : null,
-                      onSaved: (value) {},
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(
                 height: gapH * 0.1,
               ),
-              FlatButton(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 30,
-                ),
-                onPressed: () {
-                  if (_passwordControl.text != _passwordControl2.text ||
-                      _passwordControl.text.length < 5 ||
-                      _passwordControl.text.length > 10) {
-                    setState(() {
-                      _autoval = true;
-                    });
-
-                    return;
-                  }
-
-                  //LOGIN RESET
-                },
-                child: Text(
-                  'Reset password',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                color: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
+              isLoad
+                  ? CircularProgressIndicator()
+                  : FlatButton(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30,
+                      ),
+                      onPressed: () async {
+                        if (!_formK.currentState.validate()) {
+                          setState(() {
+                            _autoval = true;
+                          });
+                          return;
+                        }
+                        setState(() {
+                          isLoad = true;
+                        });
+                        var res = await Auth.changePwd(pwd);
+                        if (res > -10) {
+                          //ERROR DIALOG res==401 -> token expired
+                          //ERROR DIALOG res==-1 -> something went wrong
+                          setState(() {
+                            isLoad = false;
+                          });
+                        }
+                      },
+                      child: Text(
+                        'Reset password',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                      color: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
               svgPicture,
             ],
           ),

@@ -41,14 +41,12 @@ const kFirstText = 'Make your E-learning easy with';
 const kSL = 'SmartLearn ';
 const kOTP = ' Check your email for OTP ';
 
-snack(c, txt) {
-  return Scaffold.of(c).showSnackBar(
-    SnackBar(
-      content: Text(
-        txt,
-      ),
-    ),
-  );
+class Snack extends StatelessWidget {
+  var c;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold();
+  }
 }
 
 class Draw extends StatefulWidget {
