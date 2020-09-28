@@ -6,6 +6,9 @@ class Home extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        fontFamily: 'Gilroy',
+      ),
       home: Scaffold(
         drawer: Draw(),
         appBar: AppBar(

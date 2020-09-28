@@ -11,9 +11,16 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      // theme: ThemeData.dark(),
-      home: isAuth ? Home() : First(),
+    return ChangeNotifierProvider<Auth>(
+      create: (context) => Auth(),
+      builder: (context, _) {
+        return MaterialApp(
+          theme: ThemeData(
+            fontFamily: 'Gilroy',
+          ),
+          home: Provider.of<Auth>(context).isAuth ? Home() : First(),
+        );
+      },
     );
   }
 }

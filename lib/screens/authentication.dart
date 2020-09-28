@@ -7,6 +7,8 @@ import '../helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'home.dart';
 import '../model/auth_net.dart';
+import 'package:provider/provider.dart';
+import '../model/home_net.dart';
 
 var gapH, gapW, email, pwd;
 File pickedImage;
@@ -22,6 +24,9 @@ class First extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        fontFamily: 'Gilroy',
+      ),
       routes: {
         '/': (context) => Front(),
         '/signup': (context) => SignUp(),
@@ -104,12 +109,16 @@ class Front extends StatelessWidget {
                     children: [
                       TextSpan(
                         text: 'or',
-                        style: TextStyle(color: Colors.black),
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontFamily: 'Gilroy',
+                        ),
                       ),
                       TextSpan(
                         text: ' Login',
                         style: TextStyle(
                           color: Colors.blue,
+                          fontFamily: 'Gilroy',
                         ),
                       ),
                     ],
@@ -273,18 +282,29 @@ class _SignUpState extends State<SignUp> {
                           HapticFeedback.vibrate();
                           return;
                         }
-                        type = 1;
+                        FocusScope.of(context).requestFocus(FocusNode());
                         setState(() {
                           isLoad = true;
                         });
                         var res = await Auth.sign(name, email, pwd, null);
                         if (res > -10) {
+                          if (res == 226)
+                            showMyDialog(
+                                context, false, 'Email already in use!');
                           //ERROR DIALOG res==226 -> email in use
+                          else if (res == 400)
+                            showMyDialog(
+                                context, false, 'Incorrect use of fields!');
+                          else if (res == -1)
+                            showMyDialog(context, true, 'Something went wrong');
                           //ERROR DIALOG res==-1 -> something went wrong
                           setState(() {
                             isLoad = false;
                           });
-                          if (res == 201) Navigator.pushNamed(context, '/otp');
+                          if (res == 201) {
+                            type = 1;
+                            Navigator.pushNamed(context, '/otp');
+                          }
                         }
                       },
                       child: Text(
@@ -311,7 +331,10 @@ class _SignUpState extends State<SignUp> {
                   children: [
                     TextSpan(
                       text: 'Already have a account?',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Gilroy',
+                      ),
                     ),
                     TextSpan(
                       recognizer: TapGestureRecognizer()
@@ -322,6 +345,7 @@ class _SignUpState extends State<SignUp> {
                       text: ' Login',
                       style: TextStyle(
                         color: Colors.blue,
+                        fontFamily: 'Gilroy',
                       ),
                     ),
                   ],
@@ -382,8 +406,12 @@ class _LoginState extends State<Login> {
                       key: _pwdKey,
                       child: TextFormField(
                         keyboardType: TextInputType.visiblePassword,
-                        validator: validatePwd,
-                        autovalidate: autoP,
+                        autovalidate: true,
+                        validator: autoP
+                            ? validatePwd
+                            : (_) {
+                                return null;
+                              },
                         decoration: InputDecoration(
                           icon: Icon(Icons.lock),
                           labelText: 'Password',
@@ -413,19 +441,28 @@ class _LoginState extends State<Login> {
                                     });
                                     return;
                                   }
-                                  type = 2;
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
                                   setState(() {
                                     isLoad = true;
                                   });
                                   var res = await Auth.otpfPwd(email);
                                   if (res > -10) {
+                                    if (res == 404)
+                                      showMyDialog(
+                                          context, false, 'Email not found!');
                                     //ERROR DIALOG res==404 -> email not avail
+                                    else if (res == -1)
+                                      showMyDialog(context, true,
+                                          'Something went wrong');
                                     //ERROR DIALOG res==-1 -> something went wrong
                                     setState(() {
                                       isLoad = false;
                                     });
-                                    if (res == 200)
+                                    if (res == 200) {
+                                      type = 2;
                                       Navigator.pushNamed(context, '/otp');
+                                    }
                                   }
                                 },
                                 child: Text(
@@ -442,33 +479,44 @@ class _LoginState extends State<Login> {
                                 ),
                                 onPressed: () async {
                                   if (!_emailKey.currentState.validate() ||
-                                      !_pwdKey.currentState.validate()) {
+                                      !_pwdKey.currentState.validate() ||
+                                      !autoP) {
                                     setState(() {
                                       autoE = true;
                                       autoP = true;
                                     });
                                     return;
                                   }
-
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
                                   setState(() {
                                     isLoad = true;
                                   });
-
-                                  var res = await Auth.login(email, pwd);
+                                  // Provider.of<DataAllClasses>(context,
+                                  //         listen: false)
+                                  //     .classes();
+                                  var res = await Provider.of<Auth>(context,
+                                          listen: false)
+                                      .login(email, pwd);
                                   if (res > -10) {
-                                    //ERROR DIALOG res==226 -> email in use
-                                    //ERROR DIALOG res==-1 -> something went wrong
                                     setState(() {
                                       isLoad = false;
                                     });
-                                    if (res == 201) {
-                                      // Navigator.of(context).pushAndRemoveUntil(
-                                      //   MaterialPageRoute(
-                                      //     builder: (context) => Home(),
-                                      //   ),
-                                      //   (_) => false,
-                                      // );
-                                    }
+                                    if (res == 401)
+                                      showMyDialog(context, true,
+                                          'Credentials not found!');
+                                    //ERROR DIALOG res==226 -> email in use
+                                    else if (res == 200) {
+                                      Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute(
+                                          builder: (context) => Home(),
+                                        ),
+                                        (_) => false,
+                                      );
+                                    } else
+                                      showMyDialog(context, true,
+                                          'Something went wrong');
+                                    //ERROR DIALOG res==-1 -> something went wrong
                                   }
                                 },
                                 child: Text(
@@ -501,7 +549,10 @@ class _LoginState extends State<Login> {
                   children: [
                     TextSpan(
                       text: 'New user?',
-                      style: TextStyle(color: Colors.black),
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontFamily: 'Gilroy',
+                      ),
                     ),
                     TextSpan(
                       recognizer: TapGestureRecognizer()
@@ -511,6 +562,7 @@ class _LoginState extends State<Login> {
                       text: ' Sign Up',
                       style: TextStyle(
                         color: Colors.blue,
+                        fontFamily: 'Gilroy',
                       ),
                     ),
                   ],
@@ -665,37 +717,53 @@ class _OtpState extends State<Otp> {
                           HapticFeedback.vibrate();
                           return;
                         }
+                        FocusScope.of(context).requestFocus(FocusNode());
                         setState(() {
                           isLoad = true;
                         });
                         if (type == 1) {
                           print('$email $isStu');
-                          var res = await Auth.fPwd(email, otp);
+                          var res =
+                              await Provider.of<Auth>(context, listen: false)
+                                  .otpS(email, otp, !isStu);
                           if (res > -10) {
-                            //ERROR DIALOG res==400  wrong otp
-                            //ERROR DIALOG res==-1 -> something went wrong
                             setState(() {
                               isLoad = false;
                             });
-                            //if(res==201) {Navigator.of(context).pushAndRemoveUntil(
-                            //   MaterialPageRoute(
-                            //     builder: (context) => Home(),
-                            //   ),
-                            //   (_) => false,
-                            // );}
+                            if (res == 400)
+                              showMyDialog(
+                                  context, true, 'Wrong OTP/Expired OTP');
+                            //ERROR DIALOG res==400  wrong otp
+                            else if (res == 201) {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (context) => Home(),
+                                ),
+                                (_) => false,
+                              );
+                            } else
+                              showMyDialog(
+                                  context, true, 'Something went wrong');
+                            //ERROR DIALOG res==-1 -> something went wrong
                           }
-                        } else {
+                        }
+                        if (type == 2) {
                           print('$email $otp');
                           var res = await Auth.fPwd(email, otp);
                           if (res > -10) {
-                            //ERROR DIALOG res==400  wrong otp
-                            //ERROR DIALOG res==-1 -> something went wrong
                             setState(() {
                               isLoad = false;
                             });
-                            if (res == 200) {
+                            if (res == 400)
+                              showMyDialog(
+                                  context, true, 'Wrong OTP/Expired OTP');
+                            //ERROR DIALOG res==400  wrong otp
+                            else if (res == 200) {
                               Navigator.pushNamed(context, '/changepwd');
-                            }
+                            } else
+                              showMyDialog(
+                                  context, true, 'Something went wrong');
+                            //ERROR DIALOG res==-1 -> something went wrong
                           }
                         }
                       },
@@ -784,7 +852,7 @@ class _ChangePwdState extends State<ChangePwd> {
                               TextStyle(color: Colors.grey[400], fontSize: 12),
                         ),
                         obscureText: true,
-                        autovalidate: _autoval,
+                        autovalidate: true,
                         validator: (value) => (value != _passwordControl.text)
                             ? 'Passwords do not match!'
                             : null,
@@ -809,16 +877,33 @@ class _ChangePwdState extends State<ChangePwd> {
                           });
                           return;
                         }
+                        FocusScope.of(context).requestFocus(FocusNode());
                         setState(() {
                           isLoad = true;
                         });
-                        var res = await Auth.changePwd(pwd);
+                        var res =
+                            await Provider.of<Auth>(context, listen: false)
+                                .changePwd(pwd);
                         if (res > -10) {
-                          //ERROR DIALOG res==401 -> token expired
-                          //ERROR DIALOG res==-1 -> something went wrong
                           setState(() {
                             isLoad = false;
                           });
+                          if (res == 401)
+                            showMyDialog(
+                                context, false, 'You took too long to think.');
+                          //ERROR DIALOG res==401 -> token expired
+                          else if (res == 202) {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => Home(),
+                              ),
+                              (_) => false,
+                            );
+                          } else
+                            showMyDialog(context, true, 'Something went wrong');
+                          //ERROR DIALOG res==-1 -> something went wrong
+
+                          //Success 202
                         }
                       },
                       child: Text(

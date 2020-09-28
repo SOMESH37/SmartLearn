@@ -8,7 +8,7 @@
     <application
         android:name="io.flutter.app.FlutterApplication"
         android:label="SmartLearn"
-        android:icon="@mipmap/launch"
+        android:icon="@mipmap/logo"
         android:requestLegacyExternalStorage="true">
         <activity
             android:name=".MainActivity"

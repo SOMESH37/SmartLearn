@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/home.dart';
 import 'screens/todo.dart';
 
+var kurl = "https://4c9be3026229.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -47,6 +48,48 @@ class Snack extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold();
   }
+}
+
+Future showMyDialog(context, isDis, String msg) async {
+  return showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      return AlertDialog(
+        buttonPadding: EdgeInsets.all(15),
+        title: Text('Important Notice!'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              // Text(isDis),
+              Text(msg),
+            ],
+          ),
+        ),
+        actions: [
+          FlatButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            padding: EdgeInsets.symmetric(
+              horizontal: 30,
+            ),
+            child: Text(
+              'Okay',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+              ),
+            ),
+            color: Colors.blue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(100),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class Draw extends StatefulWidget {
