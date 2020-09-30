@@ -113,6 +113,7 @@ class Class_column extends StatelessWidget {
                       Image.asset(
                         resourceHelper[index % 3 + 3],
                         width: 200,
+                        color: Colors.white54,
                       ),
                       ListTile(
                         enabled: true,
@@ -134,17 +135,14 @@ class Class_column extends StatelessWidget {
                           ),
                           maxLines: 1,
                         ),
-                        subtitle: Wrap(
-                          children: [
-                            Text(
-                              'Short description about class',
-                              style: TextStyle(
-                                color: colors[6],
-                                fontSize: 13,
-                              ),
-                              maxLines: 3,
-                            ),
-                          ],
+                        subtitle: Text(
+                          'Short description about class',
+                          style: TextStyle(
+                            color: colors[6],
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,7 +153,7 @@ class Class_column extends StatelessWidget {
                               backgroundImage: AssetImage(resourceHelper[2]),
                             ),
                             Text(
-                              'Teacher\'s name',
+                              '',
                               style: TextStyle(
                                 color: colors[6],
                                 fontSize: 12,

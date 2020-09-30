@@ -1,16 +1,42 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../helper.dart';
+import 'home_net.dart';
 
 var _pwd, _id, _atoken, _rtoken;
 Timer autoRefresh;
 
+class DataProfile with ChangeNotifier {
+  String name;
+  String email = 'test@test.test';
+  bool isStu;
+  String img;
+  DataProfile({
+    this.name,
+    this.email,
+    this.isStu,
+    this.img,
+  });
+}
+//static DataProfile profile;
+// static String email;
+// String name = 'test';
+// bool isStu;
+// String img;
+
 class Auth extends ChangeNotifier {
-  var token;
+  List data = [];
+  String token;
+  String get hoken {
+    return token;
+  }
+
+  var profile;
   bool isAuth = false;
-  static Future<int> sign(name, email, pwd, img) async {
+  Future<int> sign(name, email, pwd, img) async {
     try {
       var responseS = await http.post(
         kurl + '/api/users/',
@@ -53,15 +79,17 @@ class Auth extends ChangeNotifier {
         ),
       );
       print(responseOS.statusCode);
-      if (responseOS.statusCode == 201) login(email, _pwd);
-      return responseOS.statusCode;
+      if (responseOS.statusCode == 202) {
+        return login(email, _pwd);
+      } else
+        return responseOS.statusCode;
     } catch (error) {
       print(error);
       return -1;
     }
   }
 
-  static Future<int> otpfPwd(email) async {
+  Future<int> otpfPwd(email) async {
     try {
       var responsefPwd = await http.post(
         kurl + '/api/password/reset',
@@ -87,7 +115,7 @@ class Auth extends ChangeNotifier {
     }
   }
 
-  static Future<int> fPwd(email, otp) async {
+  Future<int> fPwd(email, otp) async {
     try {
       var response = await http.post(
         kurl + '/api/password/reset/verify',
@@ -156,9 +184,21 @@ class Auth extends ChangeNotifier {
         final responseData = json.decode(responseL.body);
         _atoken = responseData["access"];
         _rtoken = responseData["refresh"];
-        print(responseL.body);
+        // email = responseData["email"];
+        print(responseData);
+        profile = [
+          responseData["name"],
+          responseData["email"],
+          !responseData["is_teacher"],
+          responseData["profile_pic"],
+        ];
         token = _atoken;
+        print(token);
+        data.add(profile);
+        isAuth = true;
         notifyListeners();
+        print(data);
+        print(data[0][2]);
         if (autoRefresh != null) autoRefresh.cancel();
         autoRefresh = Timer(
           Duration(minutes: 19),
@@ -170,6 +210,10 @@ class Auth extends ChangeNotifier {
       print(error);
       return -1;
     }
+  }
+
+  ret() {
+    return this.data;
   }
 
   Future<void> tokenRefresh(token) async {
@@ -186,14 +230,21 @@ class Auth extends ChangeNotifier {
         _atoken = responseData["access"];
         token = _atoken;
         notifyListeners();
+        print(token);
         if (autoRefresh != null) autoRefresh.cancel();
         autoRefresh = Timer(
           Duration(minutes: 19),
           () => tokenRefresh(_rtoken),
         );
       }
+      if (responseTR.statusCode == 401) {
+        token = -1;
+        isAuth = false;
+        notifyListeners();
+      }
     } catch (error) {
       print(error);
+      tokenRefresh(_rtoken);
       print('Token can\'t be refreshed!');
     }
   }

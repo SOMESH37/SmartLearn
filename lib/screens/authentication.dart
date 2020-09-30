@@ -8,7 +8,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'home.dart';
 import '../model/auth_net.dart';
 import 'package:provider/provider.dart';
-import '../model/home_net.dart';
 
 var gapH, gapW, email, pwd;
 File pickedImage;
@@ -202,6 +201,12 @@ class _SignUpState extends State<SignUp> {
                       child: Column(
                         children: [
                           TextFormField(
+                            textCapitalization: TextCapitalization.words,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp('[a-z A-Z]'),
+                              ),
+                            ],
                             decoration: InputDecoration(
                               icon: Icon(
                                 Icons.portrait,
@@ -286,8 +291,13 @@ class _SignUpState extends State<SignUp> {
                         setState(() {
                           isLoad = true;
                         });
-                        var res = await Auth.sign(name, email, pwd, null);
+                        var res =
+                            await Provider.of<Auth>(context, listen: false)
+                                .sign(name, email, pwd, null);
                         if (res > -10) {
+                          setState(() {
+                            isLoad = false;
+                          });
                           if (res == 226)
                             showMyDialog(
                                 context, false, 'Email already in use!');
@@ -295,16 +305,12 @@ class _SignUpState extends State<SignUp> {
                           else if (res == 400)
                             showMyDialog(
                                 context, false, 'Incorrect use of fields!');
-                          else if (res == -1)
-                            showMyDialog(context, true, 'Something went wrong');
-                          //ERROR DIALOG res==-1 -> something went wrong
-                          setState(() {
-                            isLoad = false;
-                          });
-                          if (res == 201) {
+                          else if (res == 201) {
                             type = 1;
                             Navigator.pushNamed(context, '/otp');
-                          }
+                          } else
+                            showMyDialog(context, true, 'Something went wrong');
+                          //ERROR DIALOG res==-1 -> something went wrong
                         }
                       },
                       child: Text(
@@ -339,8 +345,10 @@ class _SignUpState extends State<SignUp> {
                     TextSpan(
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                          // HapticFeedback.vibrate();
+                          isLoad
+                              ? HapticFeedback.vibrate()
+                              : Navigator.pushReplacementNamed(
+                                  context, '/login');
                         },
                       text: ' Login',
                       style: TextStyle(
@@ -446,23 +454,24 @@ class _LoginState extends State<Login> {
                                   setState(() {
                                     isLoad = true;
                                   });
-                                  var res = await Auth.otpfPwd(email);
+                                  var res = await Provider.of<Auth>(context,
+                                          listen: false)
+                                      .otpfPwd(email);
                                   if (res > -10) {
+                                    setState(() {
+                                      isLoad = false;
+                                    });
                                     if (res == 404)
                                       showMyDialog(
                                           context, false, 'Email not found!');
                                     //ERROR DIALOG res==404 -> email not avail
-                                    else if (res == -1)
+                                    else if (res == 200) {
+                                      type = 2;
+                                      Navigator.pushNamed(context, '/otp');
+                                    } else
                                       showMyDialog(context, true,
                                           'Something went wrong');
                                     //ERROR DIALOG res==-1 -> something went wrong
-                                    setState(() {
-                                      isLoad = false;
-                                    });
-                                    if (res == 200) {
-                                      type = 2;
-                                      Navigator.pushNamed(context, '/otp');
-                                    }
                                   }
                                 },
                                 child: Text(
@@ -492,9 +501,6 @@ class _LoginState extends State<Login> {
                                   setState(() {
                                     isLoad = true;
                                   });
-                                  // Provider.of<DataAllClasses>(context,
-                                  //         listen: false)
-                                  //     .classes();
                                   var res = await Provider.of<Auth>(context,
                                           listen: false)
                                       .login(email, pwd);
@@ -557,7 +563,10 @@ class _LoginState extends State<Login> {
                     TextSpan(
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
-                          Navigator.pushReplacementNamed(context, '/signup');
+                          isLoad
+                              ? HapticFeedback.vibrate()
+                              : Navigator.pushReplacementNamed(
+                                  context, '/signup');
                         },
                       text: ' Sign Up',
                       style: TextStyle(
@@ -734,13 +743,13 @@ class _OtpState extends State<Otp> {
                               showMyDialog(
                                   context, true, 'Wrong OTP/Expired OTP');
                             //ERROR DIALOG res==400  wrong otp
-                            else if (res == 201) {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                  builder: (context) => Home(),
-                                ),
-                                (_) => false,
-                              );
+                            else if (res == 200) {
+                              // Navigator.of(context).pushAndRemoveUntil(
+                              //   MaterialPageRoute(
+                              //     builder: (context) => Home(),
+                              //   ),
+                              //   (_) => false,
+                              // );
                             } else
                               showMyDialog(
                                   context, true, 'Something went wrong');
@@ -749,7 +758,9 @@ class _OtpState extends State<Otp> {
                         }
                         if (type == 2) {
                           print('$email $otp');
-                          var res = await Auth.fPwd(email, otp);
+                          var res =
+                              await Provider.of<Auth>(context, listen: false)
+                                  .fPwd(email, otp);
                           if (res > -10) {
                             setState(() {
                               isLoad = false;
@@ -758,7 +769,7 @@ class _OtpState extends State<Otp> {
                               showMyDialog(
                                   context, true, 'Wrong OTP/Expired OTP');
                             //ERROR DIALOG res==400  wrong otp
-                            else if (res == 200) {
+                            else if (res == 201) {
                               Navigator.pushNamed(context, '/changepwd');
                             } else
                               showMyDialog(
