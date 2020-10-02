@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartlearn/model/home_net.dart';
 import './screens/authentication.dart';
 import './screens/home.dart';
 import './model/auth_net.dart';
@@ -17,24 +18,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => Auth(),
         ),
+        ChangeNotifierProvider(
+          create: (_) => DataAllClasses(),
+        ),
       ],
       child: Consumer<Auth>(
-        builder: (context, auth, _) {
-          return MaterialApp(
-            theme: ThemeData(
-              fontFamily: 'Gilroy',
-            ),
-            home: AnimatedSplashScreen(
-              splash: 'resources/logo.png',
-              splashIconSize: 300,
-              splashTransition: SplashTransition.fadeTransition,
-              animationDuration: Duration(milliseconds: 100),
-              nextScreen: Provider.of<Auth>(context).isAuth
-                  ? Home()
-                  : auth.token == -1 ? Login() : First(),
-            ),
-          );
-        },
+        builder: (context, auth, _) => MaterialApp(
+          theme: ThemeData(
+            fontFamily: 'Gilroy',
+          ),
+          routes: {
+            // '/': (context) => Front(),
+            '/signup': (context) => SignUp(),
+            '/otp': (context) => Otp(),
+            '/login': (context) => Login(),
+            '/changepwd': (context) => ChangePwd(),
+          },
+          home: auth.isAuth ? Home() : First(),
+        ),
       ),
     );
   }

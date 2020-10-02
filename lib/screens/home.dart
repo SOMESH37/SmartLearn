@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../helper.dart';
+import 'package:provider/provider.dart';
+import '../model/home_net.dart';
+import '../model/auth_net.dart';
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
+  @override
+  _HomeState createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  @override
+  void didChangeDependencies() {
+    Provider.of<DataAllClasses>(context).updateClass(context);
+    super.didChangeDependencies();
+  }
+
+  String code;
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -55,19 +71,79 @@ class Home extends StatelessWidget {
             ),
           ],
         ),
-        body: Stack(
-          children: [
-            Class_column(),
-          ],
-        ),
+        body: Provider.of<DataAllClasses>(context).myclasses.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Image.asset(
+                      resourceHelper[6],
+                      width: 250,
+                    ),
+                    Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 15),
+                          child: Text(
+                            'Not enrolled in any class',
+                            style: TextStyle(
+                              color: colors[5],
+                              fontSize: 25,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          Provider.of<Auth>(context).data[0][2]
+                              ? 'Click + to Join new class'
+                              : 'Click + to Create new class',
+                          style: TextStyle(
+                            color: colors[5],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            : Stack(
+                children: [
+                  Class_column(),
+                ],
+              ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.white,
           onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => Join(),
-              ),
-            );
+            Provider.of<Auth>(context, listen: false).data[0][2]
+                ? showDialog(
+                    context: context,
+                    barrierDismissible: true,
+                    child: AlertDialog(
+                      title: Text('Join class'),
+                      content: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Enter class code',
+                        ),
+                        onChanged: (value) {
+                          code = value;
+                        },
+                      ),
+                      actions: [
+                        FlatButton(
+                          child: Text('Join'),
+                          onPressed: () async {
+                            // int res =
+                            //     await Provider.of<DataAllClasses>(context)
+                            //         .joinClass(context, code);
+                          },
+                        )
+                      ],
+                    ),
+                  )
+                : Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => Create(),
+                    ),
+                  );
           },
           child: Icon(
             Icons.add,
@@ -89,7 +165,7 @@ class Class_column extends StatelessWidget {
         Expanded(
           child: ListView.builder(
             padding: EdgeInsets.only(top: 12),
-            itemCount: 10,
+            itemCount: Provider.of<DataAllClasses>(context).myclasses.length,
             itemBuilder: (context, index) {
               return Padding(
                 padding: const EdgeInsets.symmetric(
@@ -115,51 +191,71 @@ class Class_column extends StatelessWidget {
                         width: 200,
                         color: Colors.white54,
                       ),
-                      ListTile(
-                        enabled: true,
-                        contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => Myclass(
-                                  'Name ${index + 1}', colors[index % 5][0]),
-                            ),
-                          );
-                        },
-                        title: Text(
-                          'Name ${index + 1}',
-                          style: TextStyle(
-                            color: colors[6],
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
+                      Container(
+                        constraints: BoxConstraints(
+                          minHeight: 150,
                         ),
-                        subtitle: Text(
-                          'Short description about class',
-                          style: TextStyle(
-                            color: colors[6],
-                            fontSize: 13,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 2,
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundColor: Colors.white,
-                              backgroundImage: AssetImage(resourceHelper[2]),
+                        child: ListTile(
+                          enabled: true,
+                          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => Myclass(
+                                    '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
+                                    colors[index % 5][0]),
+                              ),
+                            );
+                          },
+                          title: Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 6,
                             ),
-                            Text(
-                              '',
+                            child: Text(
+                              '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
                               style: TextStyle(
                                 color: colors[6],
-                                fontSize: 12,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
+                          subtitle: Text(
+                            '${Provider.of<DataAllClasses>(context).myclasses[index][1]}',
+                            style: TextStyle(
+                              color: colors[6],
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
+                          ),
+                          trailing: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.white,
+                                backgroundImage: Provider.of<DataAllClasses>(
+                                                context)
+                                            .myclasses[index][3] ==
+                                        null
+                                    ? AssetImage(resourceHelper[2])
+                                    : NetworkImage(
+                                        '${Provider.of<DataAllClasses>(context).myclasses[index][2]}'),
+                              ),
+                              // Text(
+                              //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
+                              //   style: TextStyle(
+                              //     color: colors[6],
+                              //     fontSize: 12,
+                              //   ),
+                              //   overflow: TextOverflow.ellipsis,
+                              //   maxLines: null,
+                              // ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -452,13 +548,22 @@ class Info extends StatelessWidget {
   }
 }
 
-class Join extends StatelessWidget {
+class Create extends StatefulWidget {
+  @override
+  _CreateState createState() => _CreateState();
+}
+
+class _CreateState extends State<Create> {
+  String sub, des;
+  final _subController = TextEditingController();
+  final _desController = TextEditingController();
+  bool isLoad = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Join class',
+          'Create new class',
           style: TextStyle(
             color: colors[7],
           ),
@@ -475,45 +580,97 @@ class Join extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Ask your teacher for the class code',
-              style: TextStyle(color: Colors.grey, fontSize: 20),
-            ),
             SizedBox(
               height: 75,
             ),
-            TextFormField(
+            TextField(
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(45),
+                FilteringTextInputFormatter.deny(
+                  RegExp(
+                      r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])'),
+                ),
+              ],
+              textCapitalization: TextCapitalization.words,
+              controller: _subController,
               decoration: InputDecoration(
-                labelText: 'Enter class code',
-                labelStyle: TextStyle(color: Colors.grey[400], fontSize: 12),
+                hintText: 'Subject name',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 18),
               ),
-              onSaved: (value) {},
+              onChanged: (value) {
+                sub = value;
+              },
+            ),
+            TextField(
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(295),
+                FilteringTextInputFormatter.deny(
+                  RegExp(
+                      r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])'),
+                ),
+              ],
+              textCapitalization: TextCapitalization.sentences,
+              controller: _desController,
+              decoration: InputDecoration(
+                hintText: 'Description',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 18),
+              ),
+              onChanged: (value) {
+                des = value;
+              },
+              maxLines: null,
             ),
             SizedBox(
               height: 50,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                FlatButton(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30,
+            isLoad
+                ? CircularProgressIndicator()
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FlatButton(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 30,
+                        ),
+                        onPressed: () async {
+                          if (_desController.value == null ||
+                              _subController.value == null) {
+                            HapticFeedback.heavyImpact();
+                            return;
+                          }
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          setState(() {
+                            isLoad = true;
+                          });
+                          int res = await Provider.of<DataAllClasses>(context,
+                                  listen: false)
+                              .createClass(context, sub, des);
+                          if (res > -10) {
+                            setState(() {
+                              isLoad = false;
+                            });
+                            if (res == 201) {
+                              Navigator.pop(context);
+                            } else
+                              showMyDialog(
+                                  context, false, 'Something went wrong');
+                            //ERROR DIALOG res==-1 -> something went wrong
+                          }
+                        },
+                        child: Text(
+                          'Create',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        color: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                      ),
+                    ],
                   ),
-                  onPressed: () {},
-                  child: Text(
-                    'Join',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                    ),
-                  ),
-                  color: Colors.blue,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

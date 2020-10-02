@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/gestures.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -11,7 +13,8 @@ import 'package:provider/provider.dart';
 
 var gapH, gapW, email, pwd;
 File pickedImage;
-var type = 0;
+int type = 0;
+Timer time;
 var high = AppBar().preferredSize.height;
 var svgPicture = SvgPicture.asset(
   resourceHelper[1],
@@ -275,6 +278,8 @@ class _SignUpState extends State<SignUp> {
               isLoad
                   ? CircularProgressIndicator()
                   : FlatButton(
+                      //ignore pointer
+                      disabledColor: Colors.grey,
                       padding: EdgeInsets.symmetric(
                         horizontal: 30,
                       ),
@@ -291,7 +296,7 @@ class _SignUpState extends State<SignUp> {
                         setState(() {
                           isLoad = true;
                         });
-                        var res =
+                        int res =
                             await Provider.of<Auth>(context, listen: false)
                                 .sign(name, email, pwd, null);
                         if (res > -10) {
@@ -461,12 +466,17 @@ class _LoginState extends State<Login> {
                                     setState(() {
                                       isLoad = false;
                                     });
-                                    if (res == 404)
+                                    if (res == 400)
                                       showMyDialog(
                                           context, false, 'Email not found!');
-                                    //ERROR DIALOG res==404 -> email not avail
+                                    //ERROR DIALOG res==400 -> email not avail
                                     else if (res == 200) {
                                       type = 2;
+                                      Navigator.pushNamed(context, '/otp');
+                                    } else if (res == 308) {
+                                      showMyDialog(context, false,
+                                          'Please verify your account!');
+                                      type = 1;
                                       Navigator.pushNamed(context, '/otp');
                                     } else
                                       showMyDialog(context, true,
@@ -508,17 +518,24 @@ class _LoginState extends State<Login> {
                                     setState(() {
                                       isLoad = false;
                                     });
-                                    if (res == 401)
-                                      showMyDialog(context, true,
-                                          'Credentials not found!');
-                                    //ERROR DIALOG res==226 -> email in use
-                                    else if (res == 200) {
-                                      Navigator.of(context).pushAndRemoveUntil(
-                                        MaterialPageRoute(
-                                          builder: (context) => Home(),
-                                        ),
-                                        (_) => false,
-                                      );
+                                    if (res == 400)
+                                      showMyDialog(
+                                          context, true, 'Email not found!');
+                                    else if (res == 401) {
+                                      showMyDialog(
+                                          context, false, 'Wrong password!');
+                                    } else if (res == 403) {
+                                      showMyDialog(context, false,
+                                          'Please verify your account!');
+                                      type = 1;
+                                      Navigator.pushNamed(context, '/otp');
+                                    } else if (res == 200) {
+                                      // Navigator.of(context).pushAndRemoveUntil(
+                                      //   MaterialPageRoute(
+                                      //     builder: (context) => Home(),
+                                      //   ),
+                                      //   (_) => false,
+                                      // );
                                     } else
                                       showMyDialog(context, true,
                                           'Something went wrong');
@@ -594,13 +611,13 @@ class Otp extends StatefulWidget {
 class _OtpState extends State<Otp> {
   var txt = 'Confirm OTP';
   var btext = 'Reset password';
-  bool isStu = true, isLoad = false;
+  bool isStu = true, isLoad = false, isDis = false;
   var otp;
   @override
   Widget build(BuildContext context) {
     if (type == 1) {
       txt = 'Confirm your E-mail';
-      btext = 'Create account';
+      btext = 'Verify account';
     }
 
     return Scaffold(
@@ -717,78 +734,130 @@ class _OtpState extends State<Otp> {
                     ),
               isLoad
                   ? CircularProgressIndicator()
-                  : FlatButton(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30,
-                      ),
-                      onPressed: () async {
-                        if (otp == null) {
-                          HapticFeedback.vibrate();
-                          return;
-                        }
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        setState(() {
-                          isLoad = true;
-                        });
-                        if (type == 1) {
-                          print('$email $isStu');
-                          var res =
-                              await Provider.of<Auth>(context, listen: false)
-                                  .otpS(email, otp, !isStu);
-                          if (res > -10) {
-                            setState(() {
-                              isLoad = false;
-                            });
-                            if (res == 400)
-                              showMyDialog(
-                                  context, true, 'Wrong OTP/Expired OTP');
-                            //ERROR DIALOG res==400  wrong otp
-                            else if (res == 200) {
-                              // Navigator.of(context).pushAndRemoveUntil(
-                              //   MaterialPageRoute(
-                              //     builder: (context) => Home(),
-                              //   ),
-                              //   (_) => false,
-                              // );
-                            } else
-                              showMyDialog(
-                                  context, true, 'Something went wrong');
-                            //ERROR DIALOG res==-1 -> something went wrong
-                          }
-                        }
-                        if (type == 2) {
-                          print('$email $otp');
-                          var res =
-                              await Provider.of<Auth>(context, listen: false)
-                                  .fPwd(email, otp);
-                          if (res > -10) {
-                            setState(() {
-                              isLoad = false;
-                            });
-                            if (res == 400)
-                              showMyDialog(
-                                  context, true, 'Wrong OTP/Expired OTP');
-                            //ERROR DIALOG res==400  wrong otp
-                            else if (res == 201) {
-                              Navigator.pushNamed(context, '/changepwd');
-                            } else
-                              showMyDialog(
-                                  context, true, 'Something went wrong');
-                            //ERROR DIALOG res==-1 -> something went wrong
-                          }
-                        }
-                      },
-                      child: Text(
-                        btext,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                  : Column(
+                      children: [
+                        FlatButton(
+                          disabledColor: Colors.grey,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 40,
+                          ),
+                          onPressed: isDis
+                              ? null
+                              : () async {
+                                  setState(() {
+                                    isDis = true;
+                                  });
+
+                                  time = Timer(
+                                    Duration(minutes: 1),
+                                    () {
+                                      setState(() {
+                                        isDis = false;
+                                      });
+                                    },
+                                  );
+
+                                  int res = await Provider.of<Auth>(context,
+                                          listen: false)
+                                      .resendOTP(email);
+                                  if (res > -10) {
+                                    if (res == 400)
+                                      showMyDialog(
+                                          context, true, 'User not found');
+                                    else if (res == 202) {
+                                      print('OTP send');
+                                    } else
+                                      showMyDialog(context, true,
+                                          'Something went wrong');
+                                  }
+                                },
+                          child: Text(
+                            'Resend OTP',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          color: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
                         ),
-                      ),
-                      color: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
+                        FlatButton(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 32,
+                          ),
+                          onPressed: () async {
+                            if (otp == null) {
+                              HapticFeedback.vibrate();
+                              return;
+                            }
+                            FocusScope.of(context).requestFocus(FocusNode());
+                            setState(() {
+                              isLoad = true;
+                            });
+                            if (type == 1) {
+                              print('$email $isStu');
+                              var res = await Provider.of<Auth>(context,
+                                      listen: false)
+                                  .otpS(email, otp, !isStu);
+                              if (res > -10) {
+                                setState(() {
+                                  isLoad = false;
+                                });
+                                if (res == 400)
+                                  showMyDialog(
+                                      context, true, 'Wrong OTP/Expired OTP');
+                                //ERROR DIALOG res==400  wrong otp
+                                else if (res == 202) {
+                                  time.cancel();
+                                  // Navigator.of(context).pushAndRemoveUntil(
+                                  //   MaterialPageRoute(
+                                  //     builder: (context) => Home(),
+                                  //   ),
+                                  //   (_) => false,
+                                  // );
+                                } else
+                                  showMyDialog(
+                                      context, true, 'Something went wrong');
+                                //ERROR DIALOG res==-1 -> something went wrong
+                              }
+                            }
+                            if (type == 2) {
+                              print('$email $otp');
+                              var res = await Provider.of<Auth>(context,
+                                      listen: false)
+                                  .fPwd(email, otp);
+                              if (res > -10) {
+                                setState(() {
+                                  isLoad = false;
+                                });
+                                if (res == 400)
+                                  showMyDialog(
+                                      context, true, 'Wrong OTP/Expired OTP');
+                                //ERROR DIALOG res==400  wrong otp
+                                else if (res == 201) {
+                                  Navigator.pushNamed(context, '/changepwd');
+                                } else
+                                  showMyDialog(
+                                      context, true, 'Something went wrong');
+                                //ERROR DIALOG res==-1 -> something went wrong
+                              }
+                            }
+                          },
+                          child: Text(
+                            btext,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          color: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ],
                     ),
               svgPicture,
             ],

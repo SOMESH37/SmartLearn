@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'screens/home.dart';
 import 'screens/todo.dart';
 import './model/auth_net.dart';
+import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://7f2d4a42ee55.ngrok.io";
+var kurl = "https://3d2edadee49b.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -105,157 +106,141 @@ bool _sel1 = true;
 bool _sel2 = false;
 
 class _DrawState extends State<Draw> {
-  String nam;
-  String na;
-  @override
-  void initState() {
-    //var k = Provider.of<Auth>(context).token;
-    // nam = Provider.of<DataProfile>(context, listen: false).name;
-    // print(nam);
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => Auth(),
-      builder: (context, _) {
-        return Drawer(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 30,
-                  top: 70,
+    //Provider.of<DataAllClasses>(context).myclasses.clear();
+    // print(Provider.of<Auth>(context).token);
+    return Drawer(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(
+              left: 30,
+              top: 70,
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.white,
+                  backgroundImage: Provider.of<Auth>(context).data[0][3] == null
+                      ? AssetImage(resourceHelper[2])
+                      : NetworkImage(
+                          '${Provider.of<Auth>(context).data[0][3]}'),
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        backgroundImage:
-                            // Provider.of<DataProfile>(context, listen: false)
-                            //             .img ==
-                            //  null
-                            // ?
-                            AssetImage(resourceHelper[2])
-                        // : Image.network(
-                        //     '${Provider.of<DataProfile>(context).img}'),
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${Provider.of<Auth>(context).data[0][0]}',
+                        style: TextStyle(
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
                         ),
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        left: 12,
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '{Provider',
-                            style: TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                          ),
-                          Text(
-                            '{Provider.',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.fade,
-                          ),
-                          Text(
-                            true ? 'Student' : 'Teacher',
-                            style: TextStyle(),
-                            maxLines: 1,
-                          ),
-                        ],
+                      Text(
+                        '${Provider.of<Auth>(context).data[0][1]}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 15,
+                        ),
+                        maxLines: null,
+                        overflow: TextOverflow.fade,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(
-                height: 60,
-                thickness: 2,
-                endIndent: 50,
-                indent: 50,
-              ),
-              Card(
-                margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
-                clipBehavior: Clip.antiAlias,
-                color: Colors.transparent,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.horizontal(
-                    right: Radius.circular(100),
+                      Text(
+                        Provider.of<Auth>(context).data[0][2]
+                            ? 'Student'
+                            : 'Teacher',
+                        style: TextStyle(),
+                        maxLines: 1,
+                      ),
+                    ],
                   ),
                 ),
-                child: ListTile(
-                  selectedTileColor: Color(0xffeaf2fe),
-                  selected: _sel1,
-                  leading: Icon(Icons.home),
-                  title: Text('My Classes'),
-                  onTap: () {
-                    setState(() {
-                      _sel1 = true;
-                      _sel2 = false;
-                    });
-                    print(Provider.of<Auth>(context, listen: false).token);
-                    // print(Auth.token);
-                    // print(Provider.of<Auth>(context, listen: false).ret());
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => Home(),
-                      ),
-                      (_) => false,
-                    );
-                  },
-                ),
-              ),
-              // Divider(),
-              // ListTile(
-              //   leading: Icon(Icons.local_library),
-              //   title: Text('Library'),
-              //   onTap: () {},
-              // ),
-              //  Divider(),
-              Card(
-                margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
-                color: Colors.transparent,
-                clipBehavior: Clip.antiAlias,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.horizontal(
-                    right: Radius.circular(100),
-                  ),
-                ),
-                child: ListTile(
-                  selectedTileColor: Color(0xffeaf2fe),
-                  selected: _sel2,
-                  leading: Icon(Icons.format_list_bulleted),
-                  title: Text('To-Do'),
-                  onTap: () {
-                    setState(() {
-                      _sel2 = true;
-                      _sel1 = false;
-                    });
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (context) => Todo(),
-                      ),
-                      (_) => false,
-                    );
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+          Divider(
+            height: 60,
+            thickness: 2,
+            endIndent: 50,
+            indent: 50,
+          ),
+          Card(
+            margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
+            clipBehavior: Clip.antiAlias,
+            color: Colors.transparent,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.horizontal(
+                right: Radius.circular(100),
+              ),
+            ),
+            child: ListTile(
+              selectedTileColor: Color(0xffeaf2fe),
+              selected: _sel1,
+              leading: Icon(Icons.home),
+              title: Text('My Classes'),
+              onTap: () {
+                setState(
+                  () {
+                    _sel1 = true;
+                    _sel2 = false;
+                  },
+                );
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => Home(),
+                  ),
+                  (_) => false,
+                );
+              },
+            ),
+          ),
+          // Divider(),
+          // ListTile(
+          //   leading: Icon(Icons.local_library),
+          //   title: Text('Library'),
+          //   onTap: () {},
+          // ),
+          //  Divider(),
+          Card(
+            margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
+            color: Colors.transparent,
+            clipBehavior: Clip.antiAlias,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.horizontal(
+                right: Radius.circular(100),
+              ),
+            ),
+            child: ListTile(
+              selectedTileColor: Color(0xffeaf2fe),
+              selected: _sel2,
+              leading: Icon(Icons.format_list_bulleted),
+              title: Text('To-Do'),
+              onTap: () {
+                setState(() {
+                  _sel2 = true;
+                  _sel1 = false;
+                });
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) => Todo(),
+                  ),
+                  (_) => false,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
