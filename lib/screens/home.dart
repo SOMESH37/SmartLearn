@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
@@ -13,20 +14,34 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   @override
-  void didChangeDependencies() {
-    Provider.of<DataAllClasses>(context).updateClass(context);
-    super.didChangeDependencies();
+  void initState() {
+    Future.delayed(Duration.zero, () {
+      Provider.of<DataAllClasses>(context, listen: false).updateClass(context);
+    });
+    super.initState();
   }
+  // void didChangeDependencies()  {
+  //    Provider.of<DataAllClasses>(context).updateClass(context);
+  //   super.didChangeDependencies();
+  // }
 
-  String code;
+  var gapH, gapW;
   @override
   Widget build(BuildContext context) {
+    var deviceSize = MediaQuery.of(context).size;
+    gapH = deviceSize.height;
+    gapW = deviceSize.width;
+
     return MaterialApp(
       theme: ThemeData(
         fontFamily: 'Gilroy',
       ),
       home: Scaffold(
-        drawer: Draw(),
+        drawer: Container(
+            constraints: BoxConstraints(
+              minWidth: 330,
+            ),
+            child: Draw()),
         appBar: AppBar(
           iconTheme: IconThemeData(
             color: colors[5],
@@ -107,35 +122,60 @@ class _HomeState extends State<Home> {
               )
             : Stack(
                 children: [
-                  Class_column(),
+                  ClassColumn(),
                 ],
               ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.white,
           onPressed: () {
+            String code;
             Provider.of<Auth>(context, listen: false).data[0][2]
                 ? showDialog(
                     context: context,
                     barrierDismissible: true,
                     child: AlertDialog(
+                      buttonPadding: EdgeInsets.fromLTRB(0, 0, 0, 0),
                       title: Text('Join class'),
                       content: TextField(
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: InputDecoration(
                           hintText: 'Enter class code',
+                          errorText: false ? 'No class code' : null,
                         ),
                         onChanged: (value) {
                           code = value;
                         },
                       ),
                       actions: [
-                        FlatButton(
-                          child: Text('Join'),
-                          onPressed: () async {
-                            // int res =
-                            //     await Provider.of<DataAllClasses>(context)
-                            //         .joinClass(context, code);
-                          },
-                        )
+                        false
+                            ? Container(
+                                constraints: BoxConstraints(
+                                  maxWidth: double.maxFinite,
+                                ),
+                                child: LinearProgressIndicator())
+                            : FlatButton(
+                                splashColor: Colors.transparent,
+                                child: Text(
+                                  'Join',
+                                  style: TextStyle(
+                                    color: colors[7],
+                                  ),
+                                ),
+                                onPressed: () async {
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
+                                  int res = await Provider.of<DataAllClasses>(
+                                          context,
+                                          listen: false)
+                                      .joinClass(context, code);
+                                  if (res == 11)
+                                    Navigator.pop(context);
+                                  else if (res == 400)
+                                    print('Wrong class code');
+                                },
+                              )
                       ],
                     ),
                   )
@@ -156,7 +196,7 @@ class _HomeState extends State<Home> {
   }
 }
 
-class Class_column extends StatelessWidget {
+class ClassColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -201,7 +241,7 @@ class Class_column extends StatelessWidget {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => Myclass(
+                                builder: (context) => MyClass(
                                     '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
                                     colors[index % 5][0]),
                               ),
@@ -243,7 +283,7 @@ class Class_column extends StatelessWidget {
                                         null
                                     ? AssetImage(resourceHelper[2])
                                     : NetworkImage(
-                                        '${Provider.of<DataAllClasses>(context).myclasses[index][2]}'),
+                                        '$kurl${Provider.of<DataAllClasses>(context).myclasses[index][3]}'),
                               ),
                               // Text(
                               //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
@@ -270,10 +310,10 @@ class Class_column extends StatelessWidget {
   }
 }
 
-class Myclass extends StatelessWidget {
+class MyClass extends StatelessWidget {
   Color colour;
   String mytitle;
-  Myclass(this.mytitle, this.colour);
+  MyClass(this.mytitle, this.colour);
 
   @override
   Widget build(BuildContext context) {
@@ -283,6 +323,11 @@ class Myclass extends StatelessWidget {
       child: Builder(builder: (context) {
         return Scaffold(
           appBar: AppBar(
+            // shape: RoundedRectangleBorder(
+            //   borderRadius: BorderRadius.vertical(
+            //     bottom: Radius.circular(50),
+            //   ),
+            // ),
             title: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -555,8 +600,6 @@ class Create extends StatefulWidget {
 
 class _CreateState extends State<Create> {
   String sub, des;
-  final _subController = TextEditingController();
-  final _desController = TextEditingController();
   bool isLoad = false;
   @override
   Widget build(BuildContext context) {
@@ -592,7 +635,6 @@ class _CreateState extends State<Create> {
                 ),
               ],
               textCapitalization: TextCapitalization.words,
-              controller: _subController,
               decoration: InputDecoration(
                 hintText: 'Subject name',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 18),
@@ -610,7 +652,6 @@ class _CreateState extends State<Create> {
                 ),
               ],
               textCapitalization: TextCapitalization.sentences,
-              controller: _desController,
               decoration: InputDecoration(
                 hintText: 'Description',
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 18),
@@ -633,8 +674,7 @@ class _CreateState extends State<Create> {
                           horizontal: 30,
                         ),
                         onPressed: () async {
-                          if (_desController.value == null ||
-                              _subController.value == null) {
+                          if (sub == null || des == null) {
                             HapticFeedback.heavyImpact();
                             return;
                           }

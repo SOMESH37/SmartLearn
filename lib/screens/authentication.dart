@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -749,7 +748,7 @@ class _OtpState extends State<Otp> {
                                   });
 
                                   time = Timer(
-                                    Duration(minutes: 1),
+                                    Duration(seconds: 40),
                                     () {
                                       setState(() {
                                         isDis = false;
@@ -765,7 +764,7 @@ class _OtpState extends State<Otp> {
                                       showMyDialog(
                                           context, true, 'User not found');
                                     else if (res == 202) {
-                                      print('OTP send');
+                                      print('OTP sent');
                                     } else
                                       showMyDialog(context, true,
                                           'Something went wrong');
@@ -809,7 +808,7 @@ class _OtpState extends State<Otp> {
                                   showMyDialog(
                                       context, true, 'Wrong OTP/Expired OTP');
                                 //ERROR DIALOG res==400  wrong otp
-                                else if (res == 202) {
+                                else if (res == 200) {
                                   time.cancel();
                                   // Navigator.of(context).pushAndRemoveUntil(
                                   //   MaterialPageRoute(

@@ -175,15 +175,14 @@ class Auth extends ChangeNotifier {
           !responseData["is_teacher"],
           responseData["profile_pic"],
         ];
-        token = _atoken;
-        print(token);
+        this.token = _atoken;
         data.clear();
         data.add(profile);
         isAuth = true;
         notifyListeners();
         if (autoRefresh != null) autoRefresh.cancel();
         autoRefresh = Timer(
-          Duration(minutes: 1009),
+          Duration(minutes: 19),
           () => tokenRefresh(_rtoken),
         );
       }
@@ -206,16 +205,16 @@ class Auth extends ChangeNotifier {
       if (responseTR.statusCode == 200) {
         final responseData = json.decode(responseTR.body);
         _atoken = responseData["access"];
-        token = _atoken;
+        this.token = _atoken;
         notifyListeners();
         print(token);
         if (autoRefresh != null) autoRefresh.cancel();
         autoRefresh = Timer(
-          Duration(seconds: 1000009),
+          Duration(minutes: 19),
           () => tokenRefresh(_rtoken),
         );
       } else if (responseTR.statusCode == 401) {
-        token = null;
+        this.token = null;
         isAuth = false;
         notifyListeners();
       } else if (responseTR.statusCode != 200) tokenRefresh(_rtoken);

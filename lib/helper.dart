@@ -5,7 +5,7 @@ import './model/auth_net.dart';
 import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://3d2edadee49b.ngrok.io";
+var kurl = "https://92601c8bda5e.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -115,7 +115,7 @@ class _DrawState extends State<Draw> {
         children: [
           Padding(
             padding: const EdgeInsets.only(
-              left: 30,
+              left: 23,
               top: 70,
             ),
             child: Row(
@@ -402,51 +402,6 @@ tileInfo(context, index) {
         ),
       ),
       Text('Student ${index + 1}'),
-    ],
-  );
-}
-
-tileTodo(context, index) {
-  return Column(
-    children: [
-      ListTile(
-        contentPadding: EdgeInsets.fromLTRB(
-          35,
-          18,
-          35,
-          10,
-        ),
-        title: Text(
-          'Task ${index + 1}',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
-        subtitle: Text(
-          index % 2 == 0
-              ? 'Efficiently mesh strategic collaboration and idea-sharing whereas standards compliant ideas. Globally negotiate installed base information through superior collaboration and idea-sharing.'
-              : '',
-          style: TextStyle(),
-        ),
-        trailing: PopupMenuButton(
-          child: Icon(Icons.more_vert),
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              height: 14,
-              child: Text(
-                'Delete',
-              ),
-            ),
-          ],
-        ),
-      ),
-      Divider(
-        endIndent: 35,
-        height: 0,
-        thickness: 1,
-        indent: 35,
-      ),
     ],
   );
 }

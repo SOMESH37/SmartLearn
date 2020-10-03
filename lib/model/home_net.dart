@@ -8,14 +8,15 @@ import 'package:provider/provider.dart';
 
 class DataAllClasses extends ChangeNotifier {
   List myclasses = [];
+  List mytodo = [];
   Future updateClass(BuildContext context) async {
-    //print(Provider.of<Auth>(context).token);
     try {
       var response = await http.get(
         kurl + '/class/classroom/',
         headers: {
           'Accept': 'application/json',
-          'Authorization': 'Bearer ${Provider.of<Auth>(context).token}',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
         },
       );
       print(response.statusCode);
@@ -34,6 +35,7 @@ class DataAllClasses extends ChangeNotifier {
             classNum["teacher"]["picture"],
           ]);
         });
+        notifyListeners();
         print(myclasses);
       }
       return response.statusCode;
@@ -69,6 +71,7 @@ class DataAllClasses extends ChangeNotifier {
           responseData["teacher"]["name"],
           responseData["teacher"]["picture"],
         ]);
+        notifyListeners();
         print(responseData);
       }
       return response.statusCode;
@@ -77,31 +80,124 @@ class DataAllClasses extends ChangeNotifier {
       return -1;
     }
   }
-}
 
-Future joinClass(BuildContext context, String code) async {
-  try {
-    var response = await http.post(
-      kurl + '/class/join/',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer ${Provider.of<Auth>(context).token}',
-      },
-      body: json.encode(
-        {
-          "class_code": "$code",
+  Future joinClass(BuildContext context, String code) async {
+    try {
+      var response = await http.post(
+        kurl + '/class/join/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+          'Content-Type': 'application/json',
         },
-      ),
-    );
-    print(response.statusCode);
-    if (response.statusCode == 201) {
-      final responseData = json.decode(response.body);
-      print(responseData);
-      List loaded = [];
+        body: json.encode(
+          {
+            "class_code": "$code",
+          },
+        ),
+      );
+      print(response.statusCode);
+      if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        print(responseData);
+        updateClass(context);
+        notifyListeners();
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
     }
-    return response.statusCode;
-  } catch (error) {
-    print(error);
-    return -1;
+  }
+
+  Future<int> updateTodo(BuildContext context) async {
+    try {
+      var response = await http.get(
+        kurl + '/todo/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('no todo');
+          return (response.statusCode);
+        }
+        mytodo.clear();
+        responseData.forEach((todoNum) {
+          mytodo.add([
+            todoNum["id"],
+            todoNum["title"],
+            todoNum["description"],
+          ]);
+        });
+        notifyListeners();
+        print(mytodo);
+        return (response.statusCode);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future createTodo(BuildContext context, String title, String des) async {
+    try {
+      var response = await http.post(
+        kurl + '/todo/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(
+          {"title": "$title", "description": "$des"},
+        ),
+      );
+      print(response.statusCode);
+      if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        mytodo.add([
+          responseData["id"],
+          responseData["title"],
+          responseData["description"],
+        ]);
+        notifyListeners();
+        print(mytodo);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future<int> deleteTodo(BuildContext context, int id) async {
+    try {
+      var response = await http.delete(
+        kurl + '/todo/$id/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      if (response.statusCode == 204) {
+        print('Deleted todo');
+        return updateTodo(context);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
   }
 }
