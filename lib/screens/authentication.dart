@@ -298,7 +298,7 @@ class _SignUpState extends State<SignUp> {
                         int res =
                             await Provider.of<Auth>(context, listen: false)
                                 .sign(name, email, pwd, null);
-                        if (res > -10) {
+                        if (res > -10 && mounted) {
                           setState(() {
                             isLoad = false;
                           });
@@ -461,7 +461,7 @@ class _LoginState extends State<Login> {
                                   var res = await Provider.of<Auth>(context,
                                           listen: false)
                                       .otpfPwd(email);
-                                  if (res > -10) {
+                                  if (res > -10 && mounted) {
                                     setState(() {
                                       isLoad = false;
                                     });
@@ -513,7 +513,7 @@ class _LoginState extends State<Login> {
                                   var res = await Provider.of<Auth>(context,
                                           listen: false)
                                       .login(email, pwd);
-                                  if (res > -10) {
+                                  if (res > -10 && mounted) {
                                     setState(() {
                                       isLoad = false;
                                     });
@@ -784,10 +784,10 @@ class _OtpState extends State<Otp> {
                         ),
                         FlatButton(
                           padding: EdgeInsets.symmetric(
-                            horizontal: 32,
+                            horizontal: 31,
                           ),
                           onPressed: () async {
-                            if (otp == null) {
+                            if (otp == null || otp.length < 1) {
                               HapticFeedback.vibrate();
                               return;
                             }
@@ -800,7 +800,7 @@ class _OtpState extends State<Otp> {
                               var res = await Provider.of<Auth>(context,
                                       listen: false)
                                   .otpS(email, otp, !isStu);
-                              if (res > -10) {
+                              if (res > -10 && mounted) {
                                 setState(() {
                                   isLoad = false;
                                 });
@@ -809,7 +809,7 @@ class _OtpState extends State<Otp> {
                                       context, true, 'Wrong OTP/Expired OTP');
                                 //ERROR DIALOG res==400  wrong otp
                                 else if (res == 200) {
-                                  time.cancel();
+                                  if (time != null) time.cancel();
                                   // Navigator.of(context).pushAndRemoveUntil(
                                   //   MaterialPageRoute(
                                   //     builder: (context) => Home(),
@@ -827,7 +827,7 @@ class _OtpState extends State<Otp> {
                               var res = await Provider.of<Auth>(context,
                                       listen: false)
                                   .fPwd(email, otp);
-                              if (res > -10) {
+                              if (res > -10 && mounted) {
                                 setState(() {
                                   isLoad = false;
                                 });
@@ -835,7 +835,8 @@ class _OtpState extends State<Otp> {
                                   showMyDialog(
                                       context, true, 'Wrong OTP/Expired OTP');
                                 //ERROR DIALOG res==400  wrong otp
-                                else if (res == 201) {
+                                else if (res == 200) {
+                                  if (time != null) time.cancel();
                                   Navigator.pushNamed(context, '/changepwd');
                                 } else
                                   showMyDialog(
@@ -963,7 +964,7 @@ class _ChangePwdState extends State<ChangePwd> {
                         var res =
                             await Provider.of<Auth>(context, listen: false)
                                 .changePwd(pwd);
-                        if (res > -10) {
+                        if (res > -10 && mounted) {
                           setState(() {
                             isLoad = false;
                           });
@@ -972,12 +973,12 @@ class _ChangePwdState extends State<ChangePwd> {
                                 context, false, 'You took too long to think.');
                           //ERROR DIALOG res==401 -> token expired
                           else if (res == 202) {
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                builder: (context) => Home(),
-                              ),
-                              (_) => false,
-                            );
+                            // Navigator.of(context).pushAndRemoveUntil(
+                            //   MaterialPageRoute(
+                            //     builder: (context) => Home(),
+                            //   ),
+                            //   (_) => false,
+                            // );
                           } else
                             showMyDialog(context, true, 'Something went wrong');
                           //ERROR DIALOG res==-1 -> something went wrong

@@ -11,22 +11,41 @@ class Todo extends StatefulWidget {
 }
 
 class _TodoState extends State<Todo> {
+  bool isLoad = true;
+  bool isLoadd = false;
+  int rep = -20;
   @override
   void initState() {
-    Future.delayed(Duration.zero, () {
-      Provider.of<DataAllClasses>(context, listen: false).updateTodo(context);
+    Future.delayed(Duration.zero, () async {
+      rep = await Provider.of<DataAllClasses>(context, listen: false)
+          .updateTodo(context);
     });
     super.initState();
   }
 
+  @override
+  void dispose() {
+    isLoad = true;
+    isLoadd = false;
+    rep = -20;
+    super.dispose();
+  }
   // void didChangeDependencies() {
   //   Provider.of<DataAllClasses>(context).updateTodo(context);
   //   super.didChangeDependencies();
   // }
 
-  bool isLoad = false;
   @override
   Widget build(BuildContext context) {
+    if (rep > -10 && mounted) {
+      if (rep > -2) {
+        setState(() {
+          isLoad = false;
+        });
+      } else {
+        // showMyDialog(context, true, 'Can\'t refresh ToDo');
+      }
+    }
     return Scaffold(
       drawer: Container(
           constraints: BoxConstraints(
@@ -69,141 +88,153 @@ class _TodoState extends State<Todo> {
       ),
       // backgroundColor: Colors.lightBlueAccent,
       backgroundColor: colors[6],
-      body: Provider.of<DataAllClasses>(context).mytodo.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Image.asset(
-                    resourceHelper[7],
-                    width: 250,
+      body: Column(
+        children: [
+          (isLoadd || isLoad)
+              ? LinearProgressIndicator(
+                  minHeight: 3,
+                )
+              : SizedBox(
+                  height: 3,
+                ),
+          Provider.of<DataAllClasses>(context).mytodo.isEmpty
+              ? Expanded(
+                  child: Center(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Image.asset(
+                          resourceHelper[7],
+                          width: 250,
+                        ),
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 15),
+                              child: Text(
+                                'Nothing in ToDo list',
+                                style: TextStyle(
+                                  color: colors[5],
+                                  fontSize: 25,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              'Click + to create new note',
+                              style: TextStyle(
+                                color: colors[5],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  Column(
+                )
+              : Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
+                        padding: const EdgeInsets.fromLTRB(
+                          35,
+                          17,
+                          0,
+                          8,
+                        ),
                         child: Text(
-                          'Nothing in ToDo list',
+                          '${Provider.of<DataAllClasses>(context).mytodo.length} Tasks',
                           style: TextStyle(
-                            color: colors[5],
-                            fontSize: 25,
+                            color: colors[7],
+                            fontSize: 16,
                           ),
                         ),
                       ),
-                      Text(
-                        'Click + to create new note',
-                        style: TextStyle(
-                          color: colors[5],
+                      Expanded(
+                        child: ListView.builder(
+                          //padding: EdgeInsets.only(top: 30),
+                          itemCount: Provider.of<DataAllClasses>(context)
+                              .mytodo
+                              .length,
+                          itemBuilder: (context, index) {
+                            return Column(
+                              children: [
+                                ListTile(
+                                  contentPadding: EdgeInsets.fromLTRB(
+                                    35,
+                                    18,
+                                    35,
+                                    10,
+                                  ),
+                                  title: Text(
+                                    '${Provider.of<DataAllClasses>(context).mytodo[index][1]}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${Provider.of<DataAllClasses>(context).mytodo[index][2]}',
+                                    style: TextStyle(),
+                                  ),
+                                  trailing: PopupMenuButton(
+                                    onSelected: (value) async {
+                                      setState(() {
+                                        isLoadd = true;
+                                      });
+                                      if (value == 0) {
+                                        int res =
+                                            await Provider.of<DataAllClasses>(
+                                                    context,
+                                                    listen: false)
+                                                .deleteTodo(
+                                                    context,
+                                                    Provider.of<DataAllClasses>(
+                                                            context,
+                                                            listen: false)
+                                                        .mytodo[index][0]);
+                                        if (res > -10 && mounted) {
+                                          setState(() {
+                                            isLoadd = false;
+                                          });
+                                          if (res == 200)
+                                            print('Deleted a todo');
+                                          else
+                                            showMyDialog(context, true,
+                                                'Something went wrong');
+                                        }
+                                      } else
+                                        print(value);
+                                    },
+                                    child: Icon(Icons.more_vert),
+                                    itemBuilder: (context) => [
+                                      PopupMenuItem(
+                                        value: 0,
+                                        height: 14,
+                                        child: Text(
+                                          'Delete',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Divider(
+                                  endIndent: 35,
+                                  height: 0,
+                                  thickness: 1,
+                                  indent: 35,
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                isLoad
-                    ? LinearProgressIndicator(
-                        minHeight: 3,
-                      )
-                    : SizedBox(
-                        height: 3,
-                      ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    35,
-                    17,
-                    0,
-                    8,
-                  ),
-                  child: Text(
-                    '${Provider.of<DataAllClasses>(context).mytodo.length} Tasks',
-                    style: TextStyle(
-                      color: colors[7],
-                      fontSize: 16,
-                    ),
-                  ),
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    //padding: EdgeInsets.only(top: 30),
-                    itemCount:
-                        Provider.of<DataAllClasses>(context).mytodo.length,
-                    itemBuilder: (context, index) {
-                      return Column(
-                        children: [
-                          ListTile(
-                            contentPadding: EdgeInsets.fromLTRB(
-                              35,
-                              18,
-                              35,
-                              10,
-                            ),
-                            title: Text(
-                              '${Provider.of<DataAllClasses>(context).mytodo[index][1]}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 18,
-                              ),
-                            ),
-                            subtitle: Text(
-                              '${Provider.of<DataAllClasses>(context).mytodo[index][2]}',
-                              style: TextStyle(),
-                            ),
-                            trailing: PopupMenuButton(
-                              onSelected: (value) async {
-                                setState(() {
-                                  isLoad = true;
-                                });
-                                if (value == 0) {
-                                  int res = await Provider.of<DataAllClasses>(
-                                          context,
-                                          listen: false)
-                                      .deleteTodo(
-                                          context,
-                                          Provider.of<DataAllClasses>(context,
-                                                  listen: false)
-                                              .mytodo[index][0]);
-                                  if (res > -10) {
-                                    setState(() {
-                                      isLoad = false;
-                                    });
-                                    if (res == 200)
-                                      print('Deleted a todo');
-                                    else
-                                      showMyDialog(context, true,
-                                          'Something went wrong');
-                                  }
-                                } else
-                                  print(value);
-                              },
-                              child: Icon(Icons.more_vert),
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  value: 0,
-                                  height: 14,
-                                  child: Text(
-                                    'Delete',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Divider(
-                            endIndent: 35,
-                            height: 0,
-                            thickness: 1,
-                            indent: 35,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
           elevation: 4,
           backgroundColor: colors[6],
@@ -230,7 +261,8 @@ class AddToDo extends StatefulWidget {
 
 class _AddToDoState extends State<AddToDo> {
   String title, des;
-  bool isLoad = false;
+  bool isLoaded = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -276,7 +308,7 @@ class _AddToDoState extends State<AddToDo> {
                 ),
                 TextField(
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(300),
+                    LengthLimitingTextInputFormatter(250),
                     FilteringTextInputFormatter.deny(
                       RegExp(
                           r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])'),
@@ -297,7 +329,7 @@ class _AddToDoState extends State<AddToDo> {
                 ),
               ],
             ),
-            isLoad
+            isLoaded
                 ? LinearProgressIndicator(
                     minHeight: 5,
                   )
@@ -334,20 +366,23 @@ class _AddToDoState extends State<AddToDo> {
                             horizontal: 30,
                           ),
                           onPressed: () async {
-                            if (title == null) {
+                            if (title == null ||
+                                des == null ||
+                                des.length < 1 ||
+                                title.length < 1) {
                               HapticFeedback.mediumImpact();
                               return;
                             }
                             FocusScope.of(context).requestFocus(FocusNode());
                             setState(() {
-                              isLoad = true;
+                              isLoaded = true;
                             });
                             int res = await Provider.of<DataAllClasses>(context,
                                     listen: false)
                                 .createTodo(context, title, des);
-                            if (res > -10) {
+                            if (res > -10 && mounted) {
                               setState(() {
-                                isLoad = false;
+                                isLoaded = false;
                               });
                               if (res == 201) {
                                 Navigator.pop(context);

@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../helper.dart';
-import 'home_net.dart';
 
 var _pwd, _id, _atoken, _rtoken;
 Timer autoRefresh;
@@ -26,7 +24,7 @@ class Auth extends ChangeNotifier {
             "password": "$pwd",
             "profile": {
               "name": "$name",
-              "picture": img == null ? null : "$img",
+              "picture": "$img",
             }
           },
         ),
@@ -141,6 +139,17 @@ class Auth extends ChangeNotifier {
       print(response.body);
       if (response.statusCode == 202) {
         tokenRefresh(_rtoken);
+        final responseData = json.decode(response.body);
+        List profile = [
+          responseData["name"],
+          responseData["email"],
+          !responseData["is_teacher"],
+          responseData["picture"],
+        ];
+        data.clear();
+        data.add(profile);
+        isAuth = true;
+        notifyListeners();
       }
       return response.statusCode;
     } catch (error) {
@@ -173,7 +182,7 @@ class Auth extends ChangeNotifier {
           responseData["name"],
           responseData["email"],
           !responseData["is_teacher"],
-          responseData["profile_pic"],
+          responseData["picture"],
         ];
         this.token = _atoken;
         data.clear();
@@ -217,10 +226,12 @@ class Auth extends ChangeNotifier {
         this.token = null;
         isAuth = false;
         notifyListeners();
-      } else if (responseTR.statusCode != 200) tokenRefresh(_rtoken);
+      } else {
+        // tokenRefresh(_rtoken);
+      }
     } catch (error) {
       print(error);
-      tokenRefresh(_rtoken);
+      // tokenRefresh(_rtoken);
       print('Token can\'t be refreshed!');
     }
   }

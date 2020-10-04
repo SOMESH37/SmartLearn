@@ -5,7 +5,7 @@ import './model/auth_net.dart';
 import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://92601c8bda5e.ngrok.io";
+var kurl = "https://489442d10b67.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -328,55 +328,6 @@ tileDiscuss(context, int index) {
                   ),
                 ),
                 Icon(Icons.chat),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-tileWork(context, int index) {
-  return Container(
-    constraints: BoxConstraints(
-      minHeight: 120,
-    ),
-    margin: EdgeInsets.symmetric(
-      horizontal: 10,
-    ),
-    child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: colors[7],
-          width: 0.1,
-        ),
-      ),
-      child: ListTile(
-        trailing: Icon(Icons.more_vert),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 18,
-        ),
-        title: Text(
-          'Assignment ${index + 1}',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Wrap(
-          children: [
-            Divider(
-              thickness: 1,
-              height: 20,
-            ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Icon(Icons.insert_drive_file),
-                Text(' File_name.pdf'),
               ],
             ),
           ],
