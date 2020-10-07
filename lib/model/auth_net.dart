@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../helper.dart';
+import 'package:dio/dio.dart';
+import 'package:path/path.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 var _pwd, _id, _atoken, _rtoken;
 Timer autoRefresh;
@@ -11,29 +16,52 @@ class Auth extends ChangeNotifier {
   List data = [];
   String token;
   bool isAuth = false;
-  Future<int> sign(name, email, pwd, img) async {
+  Future<int> sign(name, email, pwd, File img) async {
     try {
-      var responseS = await http.post(
+      String fileName = basename(img.path);
+      final mimeTypeData = lookupMimeType(img.path).split("/");
+      FormData formData = FormData.fromMap({
+        "email": "$email",
+        "password": "$pwd",
+        "profile": {
+          "name": "$name",
+          "picture": await MultipartFile.fromFile(img.path,
+              filename: fileName,
+              contentType: new MediaType(mimeTypeData[0], mimeTypeData[1])),
+        }
+      });
+      final response = await Dio().post(
         kurl + '/api/users/',
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: json.encode(
-          {
-            "email": "$email",
-            "password": "$pwd",
-            "profile": {
-              "name": "$name",
-              "picture": "$img",
-            }
+        data: formData,
+        options: Options(
+          responseType: ResponseType.json,
+          headers: {
+            "Content-Type": "application/json",
           },
         ),
       );
-      _pwd = pwd;
-      print(responseS.statusCode);
-      print(responseS.body);
+      //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> print(response);
+      // var responseS = await http.post(
+      //   kurl + '/api/users/',
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: json.encode(
+      //     {
+      //       "email": "$email",
+      //       "password": "$pwd",
+      //       "profile": {
+      //         "name": "$name",
+      //         "picture": img == null ? null : "$img",
+      //       }
+      //     },
+      //   ),
+      // );
+      // _pwd = pwd;
+      // print(responseS.statusCode);
+      // print(responseS.body);
 
-      return responseS.statusCode;
+      // return responseS.statusCode;
     } catch (error) {
       print(error);
       return -1;
@@ -227,11 +255,11 @@ class Auth extends ChangeNotifier {
         isAuth = false;
         notifyListeners();
       } else {
-        // tokenRefresh(_rtoken);
+        tokenRefresh(_rtoken);
       }
     } catch (error) {
       print(error);
-      // tokenRefresh(_rtoken);
+      tokenRefresh(_rtoken);
       print('Token can\'t be refreshed!');
     }
   }

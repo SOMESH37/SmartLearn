@@ -8,6 +8,7 @@ import '../model/home_net.dart';
 import '../model/auth_net.dart';
 import 'package:date_format/date_format.dart';
 
+var gapH, gapW;
 bool isStd;
 
 class Home extends StatefulWidget {
@@ -35,12 +36,11 @@ class _HomeState extends State<Home> {
     rep = -20;
     super.dispose();
   }
+
   // void didChangeDependencies()  {
   //    Provider.of<DataAllClasses>(context).updateClass(context);
   //   super.didChangeDependencies();
   // }
-
-  var gapH, gapW;
   @override
   Widget build(BuildContext context) {
     if (rep > -10 && mounted) {
@@ -62,7 +62,7 @@ class _HomeState extends State<Home> {
       home: Scaffold(
         drawer: Container(
             constraints: BoxConstraints(
-              minWidth: 330,
+              minWidth: 310,
             ),
             child: Draw()),
         appBar: AppBar(
@@ -298,9 +298,9 @@ class ClassColumn extends StatelessWidget {
 }
 
 class MyClass extends StatefulWidget {
-  String mytitle;
-  Color colour;
-  int classID;
+  final String mytitle;
+  final Color colour;
+  final int classID;
   MyClass(this.mytitle, this.colour, this.classID);
 
   @override
@@ -311,6 +311,7 @@ class _MyClassState extends State<MyClass> {
   int rep1 = -20;
   @override
   void initState() {
+    Provider.of<DataAllClasses>(context, listen: false).assign.clear();
     Future.delayed(Duration.zero, () async {
       rep1 = await Provider.of<DataAllClasses>(context, listen: false)
           .updateAssign(context, widget.classID);
@@ -435,7 +436,7 @@ class Discuss extends StatelessWidget {
 }
 
 class Work extends StatefulWidget {
-  int classID;
+  final int classID;
   Work(this.classID);
   @override
   _WorkState createState() => _WorkState();
@@ -458,7 +459,11 @@ class _WorkState extends State<Work> {
           : FloatingActionButton(
               backgroundColor: Colors.white,
               onPressed: () {
-                CreateWork(widget.classID);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => CreateWork(widget.classID),
+                  ),
+                );
               },
               child: Icon(
                 Icons.add,
@@ -597,16 +602,16 @@ class Info extends StatelessWidget {
               ],
             ),
           ),
-          Flexible(
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(
-                vertical: 2,
-                horizontal: 30,
-              ),
-              itemBuilder: (context, index) => tileInfo(context, index),
-              itemCount: 39,
-            ),
-          ),
+          // Flexible(
+          //   child: ListView.builder(
+          //     padding: EdgeInsets.symmetric(
+          //       vertical: 2,
+          //       horizontal: 30,
+          //     ),
+          //     itemBuilder: (context, index) => tileInfo(context, index),
+          //     itemCount: 39,
+          //   ),
+          // ),
         ],
       ),
     );
@@ -858,6 +863,9 @@ joinBox(BuildContext context) async {
 }
 
 tileWork(context, int index, int classID) {
+  var diff = DateTime.now().difference(
+      DateTime.parse(Provider.of<DataAllClasses>(context).assign[index][3])
+          .subtract(Duration(minutes: 330)));
   return Container(
     constraints: BoxConstraints(
       minHeight: 124,
@@ -875,7 +883,14 @@ tileWork(context, int index, int classID) {
         ),
       ),
       child: ListTile(
-        onTap: () {},
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) =>
+                  isStd ? UploadWork() : ViewWork(classID, index),
+            ),
+          );
+        },
         contentPadding: EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 18,
@@ -886,24 +901,10 @@ tileWork(context, int index, int classID) {
             fontWeight: FontWeight.w500,
           ),
         ),
-        trailing: Icon(
-          Icons.watch_later_rounded,
-          color: DateTime.now()
-                      .difference(DateTime.parse(
-                          Provider.of<DataAllClasses>(context).assign[index]
-                              [3]))
-                      .inHours <
-                  3
-              ? Color(0xff08bd80)
-              : DateTime.now()
-                          .difference(DateTime.parse(
-                              Provider.of<DataAllClasses>(context).assign[index]
-                                  [3]))
-                          .inSeconds <
-                      0
-                  ? Colors.redAccent
-                  : Colors.transparent,
-        ),
+        trailing: Icon(Icons.watch_later_rounded,
+            color: diff.inHours < -2
+                ? Color(0xff08bd80)
+                : diff.inSeconds <= 0 ? Colors.redAccent : Colors.transparent),
         subtitle: Column(
           children: [
             Divider(
@@ -913,13 +914,10 @@ tileWork(context, int index, int classID) {
             Row(
               //crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  ' ${formatDate(
+                Text(formatDate(
                     DateTime.parse(
                         Provider.of<DataAllClasses>(context).assign[index][3]),
-                    [h, ':', n, ' ', am, ' - ', d, '/', M, '/', yy],
-                  )}',
-                ),
+                    [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy])),
               ],
             ),
           ],
@@ -930,18 +928,22 @@ tileWork(context, int index, int classID) {
 }
 
 class CreateWork extends StatefulWidget {
-  int classID;
+  final int classID;
   CreateWork(this.classID);
   @override
   _CreateWorkState createState() => _CreateWorkState();
 }
 
 class _CreateWorkState extends State<CreateWork> {
-  var title, des, time, maxMarks, file;
+  var title, des, now, maxMarks, file;
+  DateTime date = DateTime.now().add(Duration(days: 1));
+  TimeOfDay time = TimeOfDay(hour: 6, minute: 0);
+  bool isLoad = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: !isLoad,
         title: Text(
           'Create new assignment',
           style: TextStyle(
@@ -955,138 +957,741 @@ class _CreateWorkState extends State<CreateWork> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(30, 15, 30, 5),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Title'),
-                  TextField(
-                    onChanged: (value) {
-                      title = value;
-                    },
-                    textCapitalization: TextCapitalization.words,
-                    style: TextStyle(
-                      color: colors[7],
-                    ),
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Title',
-                      hintStyle: TextStyle(
-                        color: colors[5],
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: IgnorePointer(
+            ignoring: isLoad,
+            child: Column(
+              children: [
+                isLoad
+                    ? LinearProgressIndicator(
+                        minHeight: 5,
+                      )
+                    : SizedBox(
+                        height: 5,
                       ),
-                    ),
-                    maxLines: null,
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(40),
-                    ],
-                  ),
-                  TextField(
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(250),
-                      FilteringTextInputFormatter.deny(
-                        RegExp(
-                            r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])'),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      des = value;
-                    },
-                    maxLines: null,
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      hintText: 'Note',
-                      hintStyle: TextStyle(
-                        color: colors[5],
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              // isLoaded
-              //     ? LinearProgressIndicator(
-              //         minHeight: 5,
-              //       )
-              //     :
-              Row(
-                children: [
-                  Expanded(
-                    child: FlatButton(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30,
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 12,
+                Container(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 5),
+                        child: Text(
+                          'Details:',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                         ),
                       ),
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                        side: BorderSide(color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 20,
-                  ),
-                  Expanded(
-                    child: FlatButton(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30,
-                      ),
-                      onPressed: () async {
-                        if (title == null ||
-                            des == null ||
-                            des.length < 1 ||
-                            title.length < 1) {
-                          HapticFeedback.mediumImpact();
-                          return;
-                        }
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        setState(() {
-                          //isLoaded = true;
-                        });
-                        int res = await Provider.of<DataAllClasses>(context,
-                                listen: false)
-                            .createTodo(context, title, des);
-                        if (res > -10 && mounted) {
-                          setState(() {
-                            // isLoaded = false;
-                          });
-                          if (res == 201) {
-                            Navigator.pop(context);
-                          } else
-                            showMyDialog(context, true, 'Something went wrong');
-                        }
-                      },
-                      child: Text(
-                        'Save',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: TextField(
+                          textInputAction: TextInputAction.next,
+                          onChanged: (value) {
+                            title = value;
+                          },
+                          textCapitalization: TextCapitalization.words,
+                          style: TextStyle(
+                            color: colors[7],
+                          ),
+                          decoration: InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 15),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            labelText: 'Title',
+                            labelStyle: TextStyle(
+                              color: colors[7],
+                            ),
+                            hintText: 'Assignment name',
+                            hintStyle: TextStyle(
+                              color: colors[5],
+                            ),
+                          ),
+                          maxLines: null,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(40),
+                          ],
                         ),
                       ),
-                      color: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
+                      TextField(
+                        onChanged: (value) {
+                          des = value;
+                        },
+                        textCapitalization: TextCapitalization.sentences,
+                        style: TextStyle(
+                          color: colors[7],
+                        ),
+                        decoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 15),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                          labelText: 'Description',
+                          labelStyle: TextStyle(
+                            color: colors[7],
+                          ),
+                          hintText: 'Assignment details',
+                          hintStyle: TextStyle(
+                            color: colors[5],
+                          ),
+                        ),
+                        maxLines: null,
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(250),
+                        ],
                       ),
-                    ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
+                              child: TextField(
+                                onChanged: (value) {
+                                  maxMarks = double.parse(value);
+                                },
+                                keyboardType: TextInputType.number,
+                                style: TextStyle(
+                                  color: colors[7],
+                                ),
+                                decoration: InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 15),
+                                  border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                  labelText: 'Max marks',
+                                  labelStyle: TextStyle(
+                                    color: colors[7],
+                                  ),
+                                  hintText: '100',
+                                  hintStyle: TextStyle(
+                                    color: colors[5],
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(5),
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp('[0-9]'))
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Align(
+                              child: Text(now != null
+                                  ? formatDate(now, [
+                                      h,
+                                      ':',
+                                      nn,
+                                      ' ',
+                                      am,
+                                      ' - ',
+                                      d,
+                                      '/',
+                                      M,
+                                      '/',
+                                      yy
+                                    ])
+                                  : ''),
+                            ),
+                          )
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FlatButton(
+                              splashColor: Colors.transparent,
+                              onPressed: () async {
+                                FocusScope.of(context)
+                                    .requestFocus(FocusNode());
+                                date = await showDatePicker(
+                                    context: context,
+                                    firstDate: DateTime.now(),
+                                    initialDate: date ?? DateTime.now(),
+                                    lastDate:
+                                        DateTime.now().add(Duration(days: 99)));
+                                if (date != null && time != null)
+                                  setState(() {
+                                    now = DateTime(date.year, date.month,
+                                        date.day, time.hour, time.minute);
+                                  });
+                              },
+                              child: Text(
+                                'Choose date',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: FlatButton(
+                              splashColor: Colors.transparent,
+                              onPressed: () async {
+                                FocusScope.of(context)
+                                    .requestFocus(FocusNode());
+                                time = await showTimePicker(
+                                  initialTime: time ?? TimeOfDay.now(),
+                                  context: context,
+                                );
+                                if (time != null && date != null)
+                                  setState(() {
+                                    now = DateTime(date.year, date.month,
+                                        date.day, time.hour, time.minute);
+                                  });
+                              },
+                              child: Text(
+                                'Choose time',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              )
-            ],
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: (gapH - 530)),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.only(bottom: 4),
+                        constraints: BoxConstraints(
+                          minWidth: double.infinity,
+                        ),
+                        child: FlatButton(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 10),
+                          onPressed: () {
+                            FocusScope.of(context).requestFocus(FocusNode());
+                          },
+                          child: Text(
+                            '+ Select file',
+                            style: TextStyle(
+                              color: Colors.blue,
+                            ),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                            side: BorderSide(
+                              width: 0.75,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        constraints: BoxConstraints(
+                          minWidth: double.infinity,
+                        ),
+                        child: FlatButton(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 10),
+                          onPressed: () async {
+                            if (title == null ||
+                                des == null ||
+                                now == null ||
+                                maxMarks == null ||
+                                maxMarks < 1 ||
+                                des.length < 1 ||
+                                title.length < 1) {
+                              HapticFeedback.mediumImpact();
+                              return;
+                            }
+                            FocusScope.of(context).requestFocus(FocusNode());
+                            setState(() {
+                              isLoad = true;
+                            });
+                            int res = await Provider.of<DataAllClasses>(context,
+                                    listen: false)
+                                .createAssign(context, widget.classID, title,
+                                    des, now, maxMarks, file);
+                            if (res > -10 && mounted) {
+                              setState(() {
+                                isLoad = false;
+                              });
+                              if (res == 201) {
+                                Navigator.pop(context);
+                              } else
+                                showMyDialog(
+                                    context, true, 'Something went wrong');
+                            }
+                          },
+                          child: Text(
+                            'Send',
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                          color: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class ViewWork extends StatefulWidget {
+  final int classID, idx;
+  ViewWork(this.classID, this.idx);
+
+  @override
+  _ViewWorkState createState() => _ViewWorkState();
+}
+
+class _ViewWorkState extends State<ViewWork> {
+  int res = -20;
+  bool isLoad = true;
+  @override
+  void initState() {
+    Future.delayed(Duration.zero, () async {
+      Provider.of<DataAllClasses>(context, listen: false).ans.clear();
+      res = await Provider.of<DataAllClasses>(context, listen: false)
+          .viewAllAss(
+              context,
+              widget.classID,
+              Provider.of<DataAllClasses>(context, listen: false)
+                  .assign[widget.idx][0]);
+    });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (res > -10 && mounted) {
+      if (res > -2) {
+        setState(() {
+          isLoad = false;
+        });
+      } else {
+        // showMyDialog(context, true, 'Something went wrong');
+      }
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '${Provider.of<DataAllClasses>(context).assign[widget.idx][1]}',
+          style: TextStyle(
+            color: colors[7],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: colors[6],
+        iconTheme: IconThemeData(color: colors[5]),
+        bottom: isLoad
+            ? PreferredSize(
+                child: LinearProgressIndicator(minHeight: 3),
+                preferredSize: Size(double.infinity, 3),
+              )
+            : PreferredSize(
+                child: SizedBox(height: 3),
+                preferredSize: Size(double.infinity, 3),
+              ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
+        child: ListView(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${Provider.of<DataAllClasses>(context).assign[widget.idx][2]}',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  child: Text(
+                    'Due: ' +
+                        formatDate(
+                            DateTime.parse(Provider.of<DataAllClasses>(context)
+                                .assign[widget.idx][3]),
+                            [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy]),
+                    style: TextStyle(
+                      color: Colors.blue,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${Provider.of<DataAllClasses>(context).assign[widget.idx][4]} Maximum marks',
+                  style: TextStyle(
+                    color: Colors.blue,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 25, bottom: 4),
+                  child: Text(
+                    'Attachment:',
+                    style: TextStyle(),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 25),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        width: 1,
+                        color: colors[5],
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.insert_drive_file_outlined,
+                              color: colors[5],
+                            ),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 5),
+                              child: Text(
+                                Provider.of<DataAllClasses>(context)
+                                        .assign[widget.idx][5]
+                                        .toString()
+                                        .contains('assignment')
+                                    ? Provider.of<DataAllClasses>(context)
+                                        .assign[widget.idx][5]
+                                        .toString()
+                                        .substring(52)
+                                    : '',
+                                style: TextStyle(),
+                              ),
+                            ),
+                          ],
+                        ),
+                        FlatButton(
+                          padding: EdgeInsets.zero,
+                          minWidth: 0,
+                          splashColor: Colors.transparent,
+                          onPressed: () {},
+                          child: Text(
+                            'View',
+                            style: TextStyle(color: Colors.blue),
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 5, right: 5),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Student name',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        'Status',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Divider(
+                    height: 25,
+                    thickness: 1.7,
+                  ),
+                ],
+              ),
+            ),
+            isLoad || Provider.of<DataAllClasses>(context).ans.length < 1
+                ? Container(
+                    constraints: BoxConstraints(minHeight: gapH * 0.45),
+                    width: double.infinity,
+                    child: Center(
+                      child: Image.asset(
+                        resourceHelper[6],
+                        width: 200,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: ClampingScrollPhysics(),
+                    itemCount: Provider.of<DataAllClasses>(context).ans.length,
+                    itemBuilder: (context, index) => tileInfo(
+                        context,
+                        index,
+                        widget.classID,
+                        Provider.of<DataAllClasses>(context, listen: false)
+                            .assign[widget.idx][0]),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+tileInfo(context, index, classID, assID) {
+  return GestureDetector(
+    onTap: () {
+      updateMark(context, index, classID, assID,
+          Provider.of<DataAllClasses>(context, listen: false).ans[index][0]);
+    },
+    behavior: HitTestBehavior.translucent,
+    child: Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 4,
+                    right: 15,
+                  ),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.white,
+                    backgroundImage: Provider.of<DataAllClasses>(context)
+                                .ans[index][6] ==
+                            null
+                        ? AssetImage(resourceHelper[2])
+                        : NetworkImage(
+                            '${Provider.of<DataAllClasses>(context).ans[index][6]}'),
+                  ),
+                ),
+                Text('${Provider.of<DataAllClasses>(context).ans[index][5]}'),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: Text(Provider.of<DataAllClasses>(context).ans[index][4]
+                  ? '${Provider.of<DataAllClasses>(context).ans[index][2]}'
+                  : 'Unchecked'),
+            ),
+          ],
+        ),
+        Divider(
+          height: 25,
+          indent: 15,
+          thickness: 0.7,
+        ),
+      ],
+    ),
+  );
+}
+
+updateMark(BuildContext context, idx, classID, assID, ansID) async {
+  bool isL = false;
+  int marks;
+  return showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, reset) {
+          return AlertDialog(
+            clipBehavior: Clip.hardEdge,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            buttonPadding: EdgeInsets.fromLTRB(30, 0, 0, 0),
+            contentPadding: EdgeInsets.fromLTRB(30, 25, 30, 25),
+            // insetPadding: EdgeInsets.symmetric(vertical: gapH * 0.3),
+            // actionsPadding: EdgeInsets.zero,
+            title: Text('Student name',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+            content: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.rectangle,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      width: 1,
+                      color: colors[5],
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.insert_drive_file_outlined,
+                            color: colors[5],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            child: Text(
+                              Provider.of<DataAllClasses>(context)
+                                      .ans[idx][1]
+                                      .toString()
+                                      .contains('answers')
+                                  ? Provider.of<DataAllClasses>(context)
+                                      .ans[idx][1]
+                                      .toString()
+                                      .substring(49)
+                                  : '',
+                              style: TextStyle(),
+                            ),
+                          ),
+                        ],
+                      ),
+                      FlatButton(
+                        padding: EdgeInsets.zero,
+                        minWidth: 0,
+                        splashColor: Colors.transparent,
+                        onPressed: () {},
+                        child: Text(
+                          'View',
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                TextField(
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(4),
+                    FilteringTextInputFormatter.allow(
+                      RegExp('[0-9]'),
+                    ),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Marks obtained',
+                  ),
+                  onChanged: (value) {
+                    marks = int.parse(value);
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Submission:',
+                    ),
+                    Text(
+                      Provider.of<DataAllClasses>(context).ans[idx][3]
+                          ? 'Late'
+                          : 'On time',
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              Container(
+                constraints: BoxConstraints(
+                  maxWidth: double.maxFinite,
+                ),
+                child: isL
+                    ? Column(
+                        children: [
+                          SizedBox(
+                            height: 32,
+                          ),
+                          LinearProgressIndicator(
+                            minHeight: 6,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          FlatButton(
+                            padding: EdgeInsets.only(right: 10),
+                            splashColor: Colors.transparent,
+                            child: Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: colors[7],
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                          FlatButton(
+                            padding: EdgeInsets.symmetric(horizontal: 10),
+                            color: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: Text(
+                              'Update',
+                              style: TextStyle(
+                                color: colors[6],
+                              ),
+                            ),
+                            onPressed: () async {
+                              if (marks == null || marks < 1) {
+                                HapticFeedback.mediumImpact();
+                                return;
+                              }
+                              reset(() {
+                                isL = true;
+                              });
+                              FocusScope.of(context).requestFocus(FocusNode());
+                              int res = await Provider.of<DataAllClasses>(
+                                      context,
+                                      listen: false)
+                                  .updateMarks(
+                                      context, marks, classID, assID, ansID);
+                              if (res > -10) {
+                                reset(() {
+                                  isL = false;
+                                });
+                                if (res == 200)
+                                  Navigator.pop(context);
+                                else {
+                                  showMyDialog(
+                                      context, true, 'Something went wrong');
+                                }
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+class UploadWork extends StatefulWidget {
+  @override
+  _UploadWorkState createState() => _UploadWorkState();
+}
+
+class _UploadWorkState extends State<UploadWork> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Text('upload'),
     );
   }
 }

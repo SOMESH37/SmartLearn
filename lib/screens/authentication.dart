@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import '../helper.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'home.dart';
 import '../model/auth_net.dart';
 import 'package:provider/provider.dart';
 
@@ -297,7 +296,7 @@ class _SignUpState extends State<SignUp> {
                         });
                         int res =
                             await Provider.of<Auth>(context, listen: false)
-                                .sign(name, email, pwd, null);
+                                .sign(name, email, pwd, pickedImage);
                         if (res > -10 && mounted) {
                           setState(() {
                             isLoad = false;

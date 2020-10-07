@@ -10,6 +10,7 @@ class DataAllClasses extends ChangeNotifier {
   List myclasses = [];
   List mytodo = [];
   List assign = [];
+  List ans = [];
   Future updateClass(BuildContext context) async {
     try {
       var response = await http.get(
@@ -149,10 +150,10 @@ class DataAllClasses extends ChangeNotifier {
             assignNum["submit_by"],
             assignNum["max_marks"],
             assignNum["file_linked"],
+            assignNum["is_attempted"],
           ]);
         });
-        print(responseData);
-        print(assign);
+
         notifyListeners();
       }
       return response.statusCode;
@@ -178,26 +179,87 @@ class DataAllClasses extends ChangeNotifier {
             "title": "$title",
             "description": "$des",
             "submit_by": "$time",
-            "max_marks": "$maxMarks",
-            "file_linked": "$file",
+            "max_marks": 100,
+            "file_linked": file == null ? null : file,
           },
         ),
       );
       print(response.statusCode);
+      print(response.body);
       if (response.statusCode == 201) {
-        final responseData = json.decode(response.body);
-        assign.add([
-          responseData["assignment_id"],
-          title,
-          des,
-          time,
-          maxMarks,
-          file,
-        ]);
-        notifyListeners();
+        updateAssign(context, classID);
       }
       if (response.statusCode == 403) {
         print('Don\'t mess with my code!!');
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future viewAllAss(BuildContext context, classID, assID) async {
+    try {
+      var response = await http.get(
+        kurl + '/class/classroom/$classID/assignment/$assID/answers/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('no ans');
+          return;
+        }
+        ans.clear();
+        responseData.forEach((ansNum) {
+          ans.add([
+            ansNum["id"],
+            ansNum["file_linked"],
+            ansNum["marks_scored"],
+            ansNum["late_submitted"],
+            ansNum["checked"],
+            ansNum["student"]["name"],
+            ansNum["student"]["picture"],
+          ]);
+        });
+
+        notifyListeners();
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future<int> updateMarks(
+      BuildContext context, marks, classID, assID, ansID) async {
+    try {
+      var response = await http.put(
+        kurl + '/class/classroom/$classID/assignment/$assID/answer/$ansID/',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+        body: json.encode(
+          {
+            "marks_scored": "$marks",
+          },
+        ),
+      );
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        print(response.body);
+        viewAllAss(context, classID, assID);
       }
       return response.statusCode;
     } catch (error) {

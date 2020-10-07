@@ -5,7 +5,7 @@ import './model/auth_net.dart';
 import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://489442d10b67.ngrok.io";
+var kurl = "http://18655a468945.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -46,14 +46,6 @@ const List colors = [
 const kFirstText = 'Make your E-learning easy with';
 const kSL = 'SmartLearn ';
 const kOTP = ' Check your email for OTP ';
-
-class Snack extends StatelessWidget {
-  var c;
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold();
-  }
-}
 
 Future showMyDialog(context, isDis, String msg) async {
   return showDialog(
@@ -334,25 +326,5 @@ tileDiscuss(context, int index) {
         ),
       ),
     ),
-  );
-}
-
-tileInfo(context, index) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.start,
-    children: [
-      Padding(
-        padding: EdgeInsets.symmetric(
-          vertical: 10,
-          horizontal: 20,
-        ),
-        child: CircleAvatar(
-          radius: 20,
-          backgroundColor: Colors.white,
-          backgroundImage: AssetImage(resourceHelper[2]),
-        ),
-      ),
-      Text('Student ${index + 1}'),
-    ],
   );
 }

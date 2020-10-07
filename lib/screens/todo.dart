@@ -49,7 +49,7 @@ class _TodoState extends State<Todo> {
     return Scaffold(
       drawer: Container(
           constraints: BoxConstraints(
-            minWidth: 330,
+            minWidth: 310,
           ),
           child: Draw()),
       appBar: AppBar(
