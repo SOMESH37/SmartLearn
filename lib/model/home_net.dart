@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,7 @@ class DataAllClasses extends ChangeNotifier {
   List mytodo = [];
   List assign = [];
   List ans = [];
+  List mydis = [];
   Future updateClass(BuildContext context) async {
     try {
       var response = await http.get(
@@ -38,6 +40,7 @@ class DataAllClasses extends ChangeNotifier {
             classNum["teacher"]["picture"],
             classNum["class_code"],
             classNum["id"],
+            classNum["student_no"],
           ]);
         });
         notifyListeners();
@@ -68,17 +71,8 @@ class DataAllClasses extends ChangeNotifier {
       );
       print(response.statusCode);
       if (response.statusCode == 201) {
-        final responseData = json.decode(response.body);
-        myclasses.add([
-          responseData["subject_name"],
-          responseData["description"],
-          responseData["teacher"]["name"],
-          responseData["teacher"]["picture"],
-          responseData["class_code"],
-          responseData["id"],
-        ]);
-        notifyListeners();
-        print(response.body);
+        final res = await updateClass(context);
+        if (res == 200) return res;
       }
       return response.statusCode;
     } catch (error) {
@@ -105,16 +99,8 @@ class DataAllClasses extends ChangeNotifier {
       );
       print(response.statusCode);
       if (response.statusCode == 201) {
-        final responseData = json.decode(response.body);
-        myclasses.add([
-          responseData["subject_name"],
-          responseData["description"],
-          responseData["teacher"]["name"],
-          responseData["teacher"]["picture"],
-          responseData["class_code"],
-          responseData["id"],
-        ]);
-        notifyListeners();
+        final res = await updateClass(context);
+        if (res == 200) return res;
       }
       return response.statusCode;
     } catch (error) {
@@ -150,10 +136,9 @@ class DataAllClasses extends ChangeNotifier {
             assignNum["submit_by"],
             assignNum["max_marks"],
             assignNum["file_linked"],
-            assignNum["is_attempted"],
+            assignNum["answer_id"],
           ]);
         });
-
         notifyListeners();
       }
       return response.statusCode;
@@ -179,7 +164,7 @@ class DataAllClasses extends ChangeNotifier {
             "title": "$title",
             "description": "$des",
             "submit_by": "$time",
-            "max_marks": 100,
+            "max_marks": "$maxMarks",
             "file_linked": file == null ? null : file,
           },
         ),
@@ -211,7 +196,7 @@ class DataAllClasses extends ChangeNotifier {
       );
       print(response.statusCode);
       print(response.body);
-      if (response.statusCode == 200) {
+      if (response.statusCode == 202) {
         final responseData = json.decode(response.body);
         if (responseData == null) {
           print('no ans');
@@ -257,9 +242,75 @@ class DataAllClasses extends ChangeNotifier {
         ),
       );
       print(response.statusCode);
+      print(response.body);
       if (response.statusCode == 200) {
-        print(response.body);
         viewAllAss(context, classID, assID);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future viewAns(BuildContext context, classID, assID, int ansID) async {
+    try {
+      var response = await http.get(
+        kurl + '/class/classroom/$classID/assignment/$assID/answer/$ansID/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('impossible');
+          return;
+        }
+        ans.clear();
+        ans.add([
+          responseData["id"],
+          responseData["file_linked"],
+          responseData["marks_scored"],
+          responseData["late_submitted"],
+          responseData["checked"],
+        ]);
+
+        notifyListeners();
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future uploadAns(BuildContext context, classID, assID, file) async {
+    try {
+      var response = await http.post(
+        kurl + '/class/classroom/$classID/assignment/$assID/answer/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(
+          {
+            "file_linked": file,
+          },
+        ),
+      );
+      print(response.statusCode);
+      if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        updateAssign(context, classID);
+        final res = await viewAns(context, classID, assID, responseData["id"]);
+        if (res == 200) return res;
       }
       return response.statusCode;
     } catch (error) {
@@ -294,7 +345,7 @@ class DataAllClasses extends ChangeNotifier {
           ]);
         });
         notifyListeners();
-        print(mytodo);
+        print(response.body);
         return (response.statusCode);
       }
       return response.statusCode;
@@ -317,7 +368,7 @@ class DataAllClasses extends ChangeNotifier {
         body: json.encode(
           {
             "title": "$title",
-            "description": "$des",
+            "description": des == null ? null : "$des",
           },
         ),
       );
@@ -352,6 +403,95 @@ class DataAllClasses extends ChangeNotifier {
       print(response.statusCode);
       if (response.statusCode == 204) {
         return updateTodo(context);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future updateDiscuss(BuildContext context, int classID) async {
+    try {
+      var response = await http.get(
+        kurl + '/class/classroom/$classID/doubt/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('no doubt');
+          return;
+        }
+        mydis.clear();
+        responseData.forEach((disNum) {
+          mydis.add([
+            disNum["time_created"],
+            disNum["doubt_text"],
+            disNum["user"]["name"],
+            disNum["user"]["picture"],
+            disNum["id"],
+            disNum["doubt_sender"]
+          ]);
+        });
+        notifyListeners();
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future<int> discuss(BuildContext context, String dis, int classID) async {
+    try {
+      var response = await http.post(
+        kurl + '/class/classroom/$classID/doubt/',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+        body: json.encode(
+          {
+            "doubt_text": "$dis",
+          },
+        ),
+      );
+      print(response.statusCode);
+      if (response.statusCode == 201) {
+        int res = await updateDiscuss(context, classID);
+        if (res == 200) return res;
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future<int> deleteDiscuss(
+      BuildContext context, int classID, int disID) async {
+    try {
+      var response = await http.delete(
+        kurl + '/class/classroom/$classID/doubt/$disID/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      if (response.statusCode == 202) {
+        int res = await updateDiscuss(context, classID);
+        if (res == 200) return res;
       }
       return response.statusCode;
     } catch (error) {

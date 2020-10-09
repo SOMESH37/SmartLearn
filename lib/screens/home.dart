@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'dart:ui';
 import '../helper.dart';
 import 'package:provider/provider.dart';
@@ -213,7 +214,7 @@ class ClassColumn extends StatelessWidget {
                       Image.asset(
                         resourceHelper[index % 3 + 3],
                         width: 200,
-                        color: Colors.white54,
+                        color: Colors.white38,
                       ),
                       Container(
                         constraints: BoxConstraints(
@@ -230,7 +231,8 @@ class ClassColumn extends StatelessWidget {
                                         .myclasses[index][0],
                                     colors[index % 5][0],
                                     Provider.of<DataAllClasses>(context)
-                                        .myclasses[index][5]),
+                                        .myclasses[index][5],
+                                    index),
                               ),
                             );
                           },
@@ -300,21 +302,24 @@ class ClassColumn extends StatelessWidget {
 class MyClass extends StatefulWidget {
   final String mytitle;
   final Color colour;
-  final int classID;
-  MyClass(this.mytitle, this.colour, this.classID);
+  final int classID, index;
+  MyClass(this.mytitle, this.colour, this.classID, this.index);
 
   @override
   _MyClassState createState() => _MyClassState();
 }
 
 class _MyClassState extends State<MyClass> {
-  int rep1 = -20;
+  int rep1 = -20, rep2 = -20;
+  bool isL = true;
   @override
   void initState() {
     Provider.of<DataAllClasses>(context, listen: false).assign.clear();
     Future.delayed(Duration.zero, () async {
       rep1 = await Provider.of<DataAllClasses>(context, listen: false)
           .updateAssign(context, widget.classID);
+      rep2 = await Provider.of<DataAllClasses>(context, listen: false)
+          .updateDiscuss(context, widget.classID);
     });
     super.initState();
   }
@@ -326,6 +331,15 @@ class _MyClassState extends State<MyClass> {
 
   @override
   Widget build(BuildContext context) {
+    if (rep1 > -10 && rep2 > -10 && mounted) {
+      if (rep1 > -2 && rep2 > -2) {
+        setState(() {
+          isL = false;
+        });
+      } else {
+        // showMyDialog(context, true, 'Something went wrong');
+      }
+    }
     return DefaultTabController(
       length: 3,
       initialIndex: 0,
@@ -350,12 +364,6 @@ class _MyClassState extends State<MyClass> {
                     style: TextStyle(),
                   ),
                 ),
-                // Text(
-                //   'Total students: 39',
-                //   style: TextStyle(
-                //     fontSize: 12,
-                //   ),
-                // ),
               ],
             ),
             backgroundColor: widget.colour,
@@ -365,18 +373,84 @@ class _MyClassState extends State<MyClass> {
             toolbarHeight: 120,
             actions: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30),
-                child: IconButton(
-                  icon: Icon(Icons.edit),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => Info(widget.colour),
+                padding: EdgeInsets.only(right: 35),
+                child: isL
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.7,
+                            backgroundColor: Colors.transparent,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(colors[6]),
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        icon: Icon(Icons.edit),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            barrierDismissible: true,
+                            builder: (context) {
+                              return AlertDialog(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15)),
+                                buttonPadding: EdgeInsets.all(15),
+                                content: Wrap(
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 10),
+                                              child: CircleAvatar(
+                                                radius: 20,
+                                                backgroundColor: Colors.white,
+                                                backgroundImage: Provider.of<
+                                                                        DataAllClasses>(
+                                                                    context)
+                                                                .myclasses[
+                                                            widget.index][3] ==
+                                                        null
+                                                    ? AssetImage(
+                                                        resourceHelper[2])
+                                                    : NetworkImage(
+                                                        '${Provider.of<DataAllClasses>(context).myclasses[widget.index][3]}'),
+                                              ),
+                                            ),
+                                            Text(
+                                                '${Provider.of<DataAllClasses>(context).myclasses[widget.index][2]}'),
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 13),
+                                          child: Text(
+                                            '${Provider.of<DataAllClasses>(context).myclasses[widget.index][4]}',
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                              fontSize: 50,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                            'Total students: ${Provider.of<DataAllClasses>(context).myclasses[widget.index][6]}'),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        },
+                        color: Colors.white,
                       ),
-                    );
-                  },
-                  color: Colors.white,
-                ),
               ),
             ],
             bottom: TabBar(
@@ -400,8 +474,22 @@ class _MyClassState extends State<MyClass> {
           ),
           body: TabBarView(
             children: [
-              Discuss(),
-              Work(widget.classID),
+              rep2 < -10
+                  ? Center(
+                      child: Image.asset(
+                        resourceHelper[8],
+                        width: 200,
+                      ),
+                    )
+                  : Discuss(widget.classID),
+              rep1 < -10
+                  ? Center(
+                      child: Image.asset(
+                        resourceHelper[8],
+                        width: 200,
+                      ),
+                    )
+                  : Work(widget.classID),
               Grades(),
             ],
           ),
@@ -412,27 +500,285 @@ class _MyClassState extends State<MyClass> {
 }
 
 class Discuss extends StatelessWidget {
+  final int classID;
+  Discuss(this.classID);
   @override
-  Widget build(BuildContext cxt) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(
-          vertical: 10,
-        ),
-        itemBuilder: (context, index) => tileDiscuss(context, index),
-        itemCount: 15,
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        onPressed: () {},
-        child: Icon(
-          Icons.chat_bubble,
-          color: Colors.blue,
-          size: 25,
-        ),
-      ),
-    );
+        body: Provider.of<DataAllClasses>(context).mydis.isEmpty
+            ? Center(
+                child: Image.asset(
+                  resourceHelper[8],
+                  width: 200,
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.symmetric(
+                  vertical: 10,
+                ),
+                itemBuilder: (context, index) =>
+                    tileDiscuss(context, index, classID),
+                itemCount: Provider.of<DataAllClasses>(context).mydis.length,
+              ),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.white,
+          onPressed: () {
+            bool isLoad = false;
+            var dis;
+            showBottomSheet(
+              context: context,
+              builder: (ctext) {
+                return StatefulBuilder(
+                  builder: (cxt, reSet) {
+                    return Wrap(
+                      spacing: 0,
+                      children: [
+                        if (isLoad)
+                          LinearProgressIndicator(
+                            minHeight: 6,
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: TextField(
+                                  scrollPadding: EdgeInsets.zero,
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                  ),
+                                  maxLines: 4,
+                                  autofocus: true,
+                                  inputFormatters: [
+                                    LengthLimitingTextInputFormatter(800)
+                                  ],
+                                  onChanged: (value) {
+                                    dis = value;
+                                  },
+                                  textCapitalization:
+                                      TextCapitalization.sentences,
+                                ),
+                              ),
+                              IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: Icon(Icons.send_sharp),
+                                iconSize: 35,
+                                color: Colors.blue,
+                                onPressed: isLoad
+                                    ? null
+                                    : () async {
+                                        if (dis == null || dis.length < 1) {
+                                          HapticFeedback.mediumImpact();
+                                          return;
+                                        }
+                                        FocusScope.of(cxt)
+                                            .requestFocus(FocusNode());
+                                        reSet(() {
+                                          isLoad = true;
+                                        });
+                                        int res =
+                                            await Provider.of<DataAllClasses>(
+                                                    context,
+                                                    listen: false)
+                                                .discuss(context, dis, classID);
+                                        if (res > -10) {
+                                          reSet(() {
+                                            isLoad = false;
+                                          });
+                                          if (res == 200) {
+                                            Navigator.pop(ctext);
+                                          } else if (res == 201) {
+                                            Provider.of<DataAllClasses>(context)
+                                                .updateDiscuss(
+                                                    context, classID);
+                                            Navigator.pop(ctext);
+                                          } else {
+                                            showMyDialog(context, false,
+                                                'Something went wrong');
+                                          }
+                                        }
+                                      },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              backgroundColor: Colors.blueGrey[50],
+              elevation: double.infinity,
+              clipBehavior: Clip.hardEdge,
+              shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(25))),
+            );
+          },
+          child: Icon(
+            Icons.chat_bubble,
+            color: Colors.blue,
+            size: 25,
+          ),
+        ));
   }
+}
+
+tileDiscuss(context, int index, int classID) {
+  bool me = Provider.of<DataAllClasses>(context).mydis[index][5];
+  return Container(
+    constraints: BoxConstraints(
+      minHeight: 120,
+    ),
+    margin: EdgeInsets.only(left: me ? 20 : 0, right: me ? 0 : 20),
+    child: Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+            topLeft: Radius.circular(me ? 20 : 0),
+            topRight: Radius.circular(me ? 0 : 20)),
+        side: BorderSide(
+          color: colors[7],
+          width: 0.1,
+        ),
+      ),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 12,
+        ),
+        onLongPress: me
+            ? () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (cxt) {
+                    return AlertDialog(
+                      buttonPadding: EdgeInsets.all(15),
+                      title: Text('Make your choice'),
+                      content: SingleChildScrollView(
+                        child: Text('Do you want to delete your chat?'),
+                      ),
+                      actions: [
+                        FlatButton(
+                          onPressed: () async {
+                            Navigator.of(cxt).pop();
+                            Fluttertoast.showToast(
+                              msg: 'Your request has been send!',
+                            );
+                            int res = await Provider.of<DataAllClasses>(context,
+                                    listen: false)
+                                .deleteDiscuss(
+                                    context,
+                                    classID,
+                                    Provider.of<DataAllClasses>(context,
+                                            listen: false)
+                                        .mydis[index][4]);
+                            if (res == 200)
+                              Fluttertoast.showToast(
+                                msg: 'Nobody can know your secret :)',
+                              );
+                            else if (res == 202)
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .updateDiscuss(context, classID);
+                            else
+                              Fluttertoast.showToast(
+                                msg: 'Sorry, can\'t establish a connection.',
+                              );
+                          },
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 30,
+                          ),
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          color: Colors.blue,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
+            : null,
+        title: Column(
+          children: [
+            Row(
+              mainAxisAlignment:
+                  me ? MainAxisAlignment.end : MainAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: CircleAvatar(
+                    radius: 14,
+                    backgroundColor: Colors.white,
+                    backgroundImage: Provider.of<DataAllClasses>(context)
+                                .mydis[index][3] ==
+                            null
+                        ? AssetImage(resourceHelper[2])
+                        : NetworkImage(
+                            '${Provider.of<DataAllClasses>(context).mydis[index][3]}'),
+                  ),
+                ),
+                Text(
+                  '${Provider.of<DataAllClasses>(context).mydis[index][2]}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Row(
+                mainAxisAlignment:
+                    me ? MainAxisAlignment.end : MainAxisAlignment.start,
+                children: [
+                  Text(
+                    formatDate(
+                      DateTime.parse(Provider.of<DataAllClasses>(context)
+                              .mydis[index][0])
+                          .toLocal(),
+                      [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy],
+                    ),
+                    style: TextStyle(color: colors[5], fontSize: 14),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Divider(
+              thickness: 1,
+              height: 18,
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                      '${Provider.of<DataAllClasses>(context).mydis[index][1]}'),
+                ),
+                // Icon(Icons.chat),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class Work extends StatefulWidget {
@@ -446,14 +792,21 @@ class _WorkState extends State<Work> {
   @override
   Widget build(BuildContext cxt) {
     return Scaffold(
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(
-          vertical: 10,
-        ),
-        itemCount: Provider.of<DataAllClasses>(context).assign.length,
-        itemBuilder: (context, index) =>
-            tileWork(context, index, widget.classID),
-      ),
+      body: Provider.of<DataAllClasses>(context).assign.isEmpty
+          ? Center(
+              child: Image.asset(
+                resourceHelper[8],
+                width: 200,
+              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+              ),
+              itemCount: Provider.of<DataAllClasses>(context).assign.length,
+              itemBuilder: (context, index) =>
+                  tileWork(context, index, widget.classID),
+            ),
       floatingActionButton: isStd
           ? null
           : FloatingActionButton(
@@ -508,111 +861,6 @@ class Noti extends StatelessWidget {
         ),
         itemBuilder: (context, index) => tileNoti(context, index),
         itemCount: 20,
-      ),
-    );
-  }
-}
-
-class Info extends StatelessWidget {
-  Color colour;
-  Info(this.colour);
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Information',
-              style: TextStyle(
-                color: colors[6],
-                fontSize: 22,
-              ),
-            ),
-            Divider(
-              color: colors[6],
-              thickness: 0.5,
-              height: 12,
-              endIndent: 40,
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 40),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Total students:',
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text('39'),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(right: 40),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Class code:',
-                    style: TextStyle(
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text('8xbj39'),
-                ],
-              ),
-            ),
-          ],
-        ),
-        titleSpacing: 0,
-        elevation: 0,
-        backgroundColor: colour,
-        toolbarHeight: 120,
-      ),
-      body: Column(
-        children: [
-          Card(
-            margin: EdgeInsets.zero,
-            elevation: 0,
-            child: Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    30,
-                    8,
-                    15,
-                    8,
-                  ),
-                  child: CircleAvatar(
-                    radius: 23,
-                    backgroundColor: Colors.white,
-                    backgroundImage: AssetImage(resourceHelper[2]),
-                  ),
-                ),
-                Text(
-                  'Teacher\'s Name',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Flexible(
-          //   child: ListView.builder(
-          //     padding: EdgeInsets.symmetric(
-          //       vertical: 2,
-          //       horizontal: 30,
-          //     ),
-          //     itemBuilder: (context, index) => tileInfo(context, index),
-          //     itemCount: 39,
-          //   ),
-          // ),
-        ],
       ),
     );
   }
@@ -717,12 +965,15 @@ class _CreateState extends State<Create> {
                             setState(() {
                               isLoad = false;
                             });
-                            if (res == 201) {
+                            if (res == 200) {
+                              Navigator.pop(context);
+                            } else if (res == 201) {
+                              Provider.of<DataAllClasses>(context)
+                                  .updateClass(context);
                               Navigator.pop(context);
                             } else
                               showMyDialog(
                                   context, false, 'Something went wrong');
-                            //ERROR DIALOG res==-1 -> something went wrong
                           }
                         },
                         child: Text(
@@ -841,9 +1092,13 @@ joinBox(BuildContext context) async {
                                 reset(() {
                                   isL = false;
                                 });
-                                if (res == 201)
+                                if (res == 200)
                                   Navigator.pop(context);
-                                else if (res == 400) {
+                                else if (res == 201) {
+                                  Navigator.pop(context);
+                                  Provider.of<DataAllClasses>(context)
+                                      .updateClass(context);
+                                } else if (res == 400) {
                                   reset(() {
                                     error = 'Wrong class code';
                                   });
@@ -886,8 +1141,18 @@ tileWork(context, int index, int classID) {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) =>
-                  isStd ? UploadWork() : ViewWork(classID, index),
+              builder: (context) => isStd
+                  ? UploadWork(
+                      classID,
+                      index,
+                      (Provider.of<DataAllClasses>(context).assign[index][6] ==
+                                  null ||
+                              Provider.of<DataAllClasses>(context).assign[index]
+                                      [6] ==
+                                  false)
+                          ? false
+                          : true)
+                  : ViewWork(classID, index),
             ),
           );
         },
@@ -937,7 +1202,7 @@ class CreateWork extends StatefulWidget {
 class _CreateWorkState extends State<CreateWork> {
   var title, des, now, maxMarks, file;
   DateTime date = DateTime.now().add(Duration(days: 1));
-  TimeOfDay time = TimeOfDay(hour: 6, minute: 0);
+  TimeOfDay time = TimeOfDay(hour: 21, minute: 0);
   bool isLoad = false;
   @override
   Widget build(BuildContext context) {
@@ -954,6 +1219,15 @@ class _CreateWorkState extends State<CreateWork> {
         iconTheme: IconThemeData(
           color: colors[7],
         ),
+        bottom: isLoad
+            ? PreferredSize(
+                child: LinearProgressIndicator(minHeight: 3),
+                preferredSize: Size(double.infinity, 3),
+              )
+            : PreferredSize(
+                child: SizedBox(height: 3),
+                preferredSize: Size(double.infinity, 3),
+              ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -962,13 +1236,6 @@ class _CreateWorkState extends State<CreateWork> {
             ignoring: isLoad,
             child: Column(
               children: [
-                isLoad
-                    ? LinearProgressIndicator(
-                        minHeight: 5,
-                      )
-                    : SizedBox(
-                        height: 5,
-                      ),
                 Container(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1046,7 +1313,7 @@ class _CreateWorkState extends State<CreateWork> {
                               padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
                               child: TextField(
                                 onChanged: (value) {
-                                  maxMarks = double.parse(value);
+                                  maxMarks = int.tryParse(value);
                                 },
                                 keyboardType: TextInputType.number,
                                 style: TextStyle(
@@ -1067,7 +1334,7 @@ class _CreateWorkState extends State<CreateWork> {
                                   ),
                                 ),
                                 inputFormatters: [
-                                  LengthLimitingTextInputFormatter(5),
+                                  LengthLimitingTextInputFormatter(4),
                                   FilteringTextInputFormatter.allow(
                                       RegExp('[0-9]'))
                                 ],
@@ -1153,7 +1420,7 @@ class _CreateWorkState extends State<CreateWork> {
                   ),
                 ),
                 Container(
-                  margin: EdgeInsets.only(top: (gapH - 530)),
+                  margin: EdgeInsets.only(top: (gapH - 510)),
                   child: Column(
                     children: [
                       Container(
@@ -1193,7 +1460,6 @@ class _CreateWorkState extends State<CreateWork> {
                                 des == null ||
                                 now == null ||
                                 maxMarks == null ||
-                                maxMarks < 1 ||
                                 des.length < 1 ||
                                 title.length < 1) {
                               HapticFeedback.mediumImpact();
@@ -1427,7 +1693,7 @@ class _ViewWorkState extends State<ViewWork> {
                     width: double.infinity,
                     child: Center(
                       child: Image.asset(
-                        resourceHelper[6],
+                        resourceHelper[8],
                         width: 200,
                       ),
                     ),
@@ -1514,13 +1780,14 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
             clipBehavior: Clip.hardEdge,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            buttonPadding: EdgeInsets.fromLTRB(30, 0, 0, 0),
-            contentPadding: EdgeInsets.fromLTRB(30, 25, 30, 25),
+            buttonPadding: EdgeInsets.zero,
+            contentPadding: EdgeInsets.fromLTRB(30, 25, 30, 0),
+            titlePadding: EdgeInsets.only(left: 30, top: 30),
             // insetPadding: EdgeInsets.symmetric(vertical: gapH * 0.3),
             // actionsPadding: EdgeInsets.zero,
-            title: Text('Student name',
+            title: Text('${Provider.of<DataAllClasses>(context).ans[idx][5]}',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-            content: Column(
+            content: Wrap(
               children: [
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 10),
@@ -1535,28 +1802,34 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.insert_drive_file_outlined,
-                            color: colors[5],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Text(
-                              Provider.of<DataAllClasses>(context)
-                                      .ans[idx][1]
-                                      .toString()
-                                      .contains('answers')
-                                  ? Provider.of<DataAllClasses>(context)
-                                      .ans[idx][1]
-                                      .toString()
-                                      .substring(49)
-                                  : '',
-                              style: TextStyle(),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.insert_drive_file_outlined,
+                              color: colors[5],
                             ),
-                          ),
-                        ],
+                            Expanded(
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5),
+                                child: Text(
+                                  Provider.of<DataAllClasses>(context)
+                                          .ans[idx][1]
+                                          .toString()
+                                          .contains('answers')
+                                      ? Provider.of<DataAllClasses>(context)
+                                          .ans[idx][1]
+                                          .toString()
+                                          .substring(49)
+                                      : '',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       FlatButton(
                         padding: EdgeInsets.zero,
@@ -1572,6 +1845,7 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                   ),
                 ),
                 TextField(
+                  keyboardType: TextInputType.number,
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(4),
                     FilteringTextInputFormatter.allow(
@@ -1580,23 +1854,29 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                   ],
                   decoration: InputDecoration(
                     labelText: 'Marks obtained',
+                    hintText: Provider.of<DataAllClasses>(context).ans[idx][4]
+                        ? '${Provider.of<DataAllClasses>(context).ans[idx][2]}'
+                        : null,
                   ),
                   onChanged: (value) {
-                    marks = int.parse(value);
+                    marks = int.tryParse(value);
                   },
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Submission:',
-                    ),
-                    Text(
-                      Provider.of<DataAllClasses>(context).ans[idx][3]
-                          ? 'Late'
-                          : 'On time',
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Submission:',
+                      ),
+                      Text(
+                        Provider.of<DataAllClasses>(context).ans[idx][3]
+                            ? 'Late'
+                            : 'Before time',
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1616,62 +1896,69 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                           ),
                         ],
                       )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          FlatButton(
-                            padding: EdgeInsets.only(right: 10),
-                            splashColor: Colors.transparent,
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                color: colors[7],
+                    : Padding(
+                        padding: const EdgeInsets.only(bottom: 10, right: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            FlatButton(
+                              padding: EdgeInsets.only(right: 15),
+                              splashColor: Colors.transparent,
+                              child: Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  color: colors[7],
+                                ),
                               ),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
                             ),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                          FlatButton(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            color: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Text(
-                              'Update',
-                              style: TextStyle(
-                                color: colors[6],
+                            FlatButton(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              color: Colors.blue,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(100),
                               ),
-                            ),
-                            onPressed: () async {
-                              if (marks == null || marks < 1) {
-                                HapticFeedback.mediumImpact();
-                                return;
-                              }
-                              reset(() {
-                                isL = true;
-                              });
-                              FocusScope.of(context).requestFocus(FocusNode());
-                              int res = await Provider.of<DataAllClasses>(
-                                      context,
-                                      listen: false)
-                                  .updateMarks(
-                                      context, marks, classID, assID, ansID);
-                              if (res > -10) {
-                                reset(() {
-                                  isL = false;
-                                });
-                                if (res == 200)
-                                  Navigator.pop(context);
-                                else {
-                                  showMyDialog(
-                                      context, true, 'Something went wrong');
+                              child: Text(
+                                'Update',
+                                style: TextStyle(
+                                  color: colors[6],
+                                ),
+                              ),
+                              onPressed: () async {
+                                if (marks == null) {
+                                  HapticFeedback.mediumImpact();
+                                  return;
                                 }
-                              }
-                            },
-                          ),
-                        ],
+                                reset(() {
+                                  isL = true;
+                                });
+                                FocusScope.of(context)
+                                    .requestFocus(FocusNode());
+                                int res = await Provider.of<DataAllClasses>(
+                                        context,
+                                        listen: false)
+                                    .updateMarks(
+                                        context, marks, classID, assID, ansID);
+                                if (res > -10) {
+                                  reset(() {
+                                    isL = false;
+                                  });
+                                  if (res == 200)
+                                    Navigator.pop(context);
+                                  else if (res == 400)
+                                    showMyDialog(context, true,
+                                        'Can\'t exceed MaxMarks!');
+                                  else {
+                                    showMyDialog(
+                                        context, true, 'Something went wrong');
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
                       ),
               ),
             ],
@@ -1683,15 +1970,370 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
 }
 
 class UploadWork extends StatefulWidget {
+  final int idx, classID;
+  bool isAttempted;
+  UploadWork(this.classID, this.idx, this.isAttempted);
   @override
   _UploadWorkState createState() => _UploadWorkState();
 }
 
 class _UploadWorkState extends State<UploadWork> {
   @override
+  void initState() {
+    Future.delayed(Duration.zero, () async {
+      Provider.of<DataAllClasses>(context, listen: false).ans.clear();
+      if (widget.isAttempted) {
+        await Provider.of<DataAllClasses>(context, listen: false).viewAns(
+            context,
+            widget.classID,
+            Provider.of<DataAllClasses>(context, listen: false)
+                .assign[widget.idx][0],
+            Provider.of<DataAllClasses>(context, listen: false)
+                .assign[widget.idx][6]);
+      }
+    });
+    super.initState();
+  }
+
+  bool isLoad = false;
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Text('upload'),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          '${Provider.of<DataAllClasses>(context).assign[widget.idx][1]}',
+          style: TextStyle(
+            color: colors[7],
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: colors[6],
+        iconTheme: IconThemeData(color: colors[5]),
+      ),
+      body: (Provider.of<DataAllClasses>(context).ans.isEmpty &&
+              widget.isAttempted)
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(20, 15, 20, 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${Provider.of<DataAllClasses>(context).assign[widget.idx][2]}',
+                        style: TextStyle(
+                            fontSize: 19, fontWeight: FontWeight.w500),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, bottom: 7),
+                        child: Text(
+                          'Due: ' +
+                              formatDate(
+                                  DateTime.parse(
+                                      Provider.of<DataAllClasses>(context)
+                                          .assign[widget.idx][3]),
+                                  [
+                                    h,
+                                    ':',
+                                    nn,
+                                    ' ',
+                                    am,
+                                    ' - ',
+                                    d,
+                                    '/',
+                                    M,
+                                    '/',
+                                    yy
+                                  ]),
+                          style: TextStyle(
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${Provider.of<DataAllClasses>(context).assign[widget.idx][4]} Maximum marks',
+                        style: TextStyle(
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15, bottom: 4),
+                        child: Text(
+                          'Attachment:',
+                          style: TextStyle(),
+                        ),
+                      ),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            width: 1,
+                            color: colors[5],
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.insert_drive_file_outlined,
+                                    color: colors[5],
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 5),
+                                      child: Text(
+                                        Provider.of<DataAllClasses>(context)
+                                                .assign[widget.idx][5]
+                                                .toString()
+                                                .contains('assignment')
+                                            ? Provider.of<DataAllClasses>(
+                                                    context)
+                                                .assign[widget.idx][5]
+                                                .toString()
+                                                .substring(52)
+                                            : '',
+                                        style: TextStyle(),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            FlatButton(
+                              padding: EdgeInsets.zero,
+                              minWidth: 0,
+                              splashColor: Colors.transparent,
+                              onPressed: () {},
+                              child: Text(
+                                'View',
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      if (widget.isAttempted)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 15, horizontal: 12),
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Submission:',
+                                    ),
+                                    Text(
+                                      Provider.of<DataAllClasses>(context)
+                                              .ans[0][3]
+                                          ? 'Late'
+                                          : 'Before time',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    Provider.of<DataAllClasses>(context).ans[0]
+                                            [4]
+                                        ? 'Marks obtained:'
+                                        : 'Unchecked',
+                                  ),
+                                  Text(
+                                    Provider.of<DataAllClasses>(context).ans[0]
+                                            [4]
+                                        ? '${Provider.of<DataAllClasses>(context).ans[0][2]}'
+                                        : '',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                  widget.isAttempted
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 7),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Your work:'),
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.rectangle,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    width: 1,
+                                    color: colors[5],
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.insert_drive_file_outlined,
+                                            color: colors[5],
+                                          ),
+                                          Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 5),
+                                              child: Text(
+                                                Provider.of<DataAllClasses>(
+                                                            context)
+                                                        .ans[0][1]
+                                                        .toString()
+                                                        .contains('answers')
+                                                    ? Provider.of<
+                                                                DataAllClasses>(
+                                                            context)
+                                                        .ans[0][1]
+                                                        .toString()
+                                                        .substring(49)
+                                                    : '',
+                                                style: TextStyle(),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    FlatButton(
+                                      padding: EdgeInsets.zero,
+                                      minWidth: 0,
+                                      splashColor: Colors.transparent,
+                                      onPressed: () {},
+                                      child: Text(
+                                        'View',
+                                        style: TextStyle(color: Colors.blue),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : isLoad
+                          ? Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: CircularProgressIndicator(),
+                            )
+                          : Column(
+                              children: [
+                                Container(
+                                  constraints: BoxConstraints(
+                                    minWidth: double.infinity,
+                                  ),
+                                  child: FlatButton(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 30, vertical: 10),
+                                    onPressed: () {
+                                      FocusScope.of(context)
+                                          .requestFocus(FocusNode());
+                                    },
+                                    child: Text(
+                                      '+ Select file',
+                                      style: TextStyle(
+                                        color: Colors.blue,
+                                      ),
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(100),
+                                      side: BorderSide(
+                                        width: 0.75,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  constraints: BoxConstraints(
+                                    minWidth: double.infinity,
+                                  ),
+                                  child: FlatButton(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 30, vertical: 10),
+                                    onPressed: () async {
+                                      if (false) {
+                                        HapticFeedback.mediumImpact();
+                                        return;
+                                      }
+                                      FocusScope.of(context)
+                                          .requestFocus(FocusNode());
+                                      setState(() {
+                                        isLoad = true;
+                                      });
+                                      int res =
+                                          await Provider.of<DataAllClasses>(
+                                                  context,
+                                                  listen: false)
+                                              .uploadAns(
+                                                  context,
+                                                  widget.classID,
+                                                  Provider.of<DataAllClasses>(
+                                                          context,
+                                                          listen: false)
+                                                      .assign[widget.idx][0],
+                                                  null);
+                                      if (res > -10 && mounted) {
+                                        setState(() {
+                                          isLoad = false;
+                                        });
+                                        if (res == 201) {
+                                          Navigator.pop(context);
+                                        } else if (res == 200) {
+                                          setState(() {
+                                            print('awc');
+                                            widget.isAttempted = true;
+                                          });
+                                        } else
+                                          showMyDialog(context, true,
+                                              'Something went wrong');
+                                      }
+                                    },
+                                    child: Text(
+                                      'Submit',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    color: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(100),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                ],
+              ),
+            ),
     );
   }
 }

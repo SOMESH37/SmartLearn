@@ -342,16 +342,17 @@ class _SignUpState extends State<SignUp> {
                       text: 'Already have a account?',
                       style: TextStyle(
                         color: Colors.black,
-                        fontFamily: 'Gilroy',
                       ),
                     ),
                     TextSpan(
                       recognizer: TapGestureRecognizer()
                         ..onTap = () {
-                          isLoad
-                              ? HapticFeedback.vibrate()
-                              : Navigator.pushReplacementNamed(
-                                  context, '/login');
+                          if (isLoad)
+                            HapticFeedback.vibrate();
+                          else {
+                            pickedImage = null;
+                            Navigator.pushReplacementNamed(context, '/login');
+                          }
                         },
                       text: ' Login',
                       style: TextStyle(

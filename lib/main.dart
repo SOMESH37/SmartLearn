@@ -34,9 +34,29 @@ class MyApp extends StatelessWidget {
             '/login': (context) => Login(),
             '/changepwd': (context) => ChangePwd(),
           },
-          home: auth.isAuth ? Home() : First(),
+          home: auth.isAuth
+              ? Home()
+              :
+              // First()
+
+              FutureBuilder(
+                  future: auth.autoLogin(),
+                  builder: (context, snapshot) =>
+                      snapshot.connectionState == ConnectionState.waiting
+                          ? SplashScreen()
+                          : First(),
+                ),
         ),
       ),
+    );
+  }
+}
+
+class SplashScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text('Will create it soon!'),
     );
   }
 }

@@ -175,7 +175,9 @@ class _TodoState extends State<Todo> {
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '${Provider.of<DataAllClasses>(context).mytodo[index][2]}',
+                                    Provider.of<DataAllClasses>(context)
+                                            .mytodo[index][2] ??
+                                        '',
                                     style: TextStyle(),
                                   ),
                                   trailing: PopupMenuButton(
@@ -366,10 +368,7 @@ class _AddToDoState extends State<AddToDo> {
                             horizontal: 30,
                           ),
                           onPressed: () async {
-                            if (title == null ||
-                                des == null ||
-                                des.length < 1 ||
-                                title.length < 1) {
+                            if (title == null || title.length < 1) {
                               HapticFeedback.mediumImpact();
                               return;
                             }

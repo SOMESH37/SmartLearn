@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'screens/home.dart';
 import 'screens/todo.dart';
 import './model/auth_net.dart';
-import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "http://18655a468945.ngrok.io";
+var kurl = "https://1e2ed4f7dbc6.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -15,6 +14,7 @@ const List resourceHelper = [
   'resources/back3.png',
   'resources/noclass.png',
   'resources/notodo.png',
+  'resources/noassign.png',
 ];
 
 const List colors = [
@@ -142,8 +142,8 @@ class _DrawState extends State<Draw> {
                           fontWeight: FontWeight.w500,
                           fontSize: 15,
                         ),
-                        maxLines: null,
-                        overflow: TextOverflow.fade,
+                        // maxLines: null,
+                        // overflow: TextOverflow.fade,
                       ),
                       Text(
                         Provider.of<Auth>(context).data[0][2]
@@ -265,63 +265,6 @@ tileNoti(context, int index) {
           children: [
             Text(
                 'Dramatically fashion covalent technologies via adaptive covalsd intellectual capital. Dynamically integrate.'),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-tileDiscuss(context, int index) {
-  return Container(
-    constraints: BoxConstraints(
-      minHeight: 120,
-    ),
-    margin: EdgeInsets.symmetric(
-      horizontal: 10,
-    ),
-    child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: colors[7],
-          width: 0.1,
-        ),
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 12,
-        ),
-        title: Text(
-          'Student name ${index + 10}',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Wrap(
-          children: [
-            Divider(
-              thickness: 1,
-              endIndent: 40,
-              height: 20,
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: Text(
-                    'Efficiently mesh strategic collaboration and idea-sharing whereas standards compliant ideas. Globally negotiate installed base information through superior collaboration and idea-sharing.',
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
-                    //    softWrap: false,
-                  ),
-                ),
-                Icon(Icons.chat),
-              ],
-            ),
           ],
         ),
       ),

@@ -8,9 +8,13 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 var _pwd, _id, _atoken, _rtoken;
 Timer autoRefresh;
+String rTOKEN;
+List pro = [];
+var pref;
 
 class Auth extends ChangeNotifier {
   List data = [];
@@ -18,50 +22,53 @@ class Auth extends ChangeNotifier {
   bool isAuth = false;
   Future<int> sign(name, email, pwd, File img) async {
     try {
-      String fileName = basename(img.path);
-      final mimeTypeData = lookupMimeType(img.path).split("/");
-      FormData formData = FormData.fromMap({
-        "email": "$email",
-        "password": "$pwd",
-        "profile": {
-          "name": "$name",
-          "picture": await MultipartFile.fromFile(img.path,
+      if (img != null) {
+        String fileName = basename(img.path);
+        final mimeTypeData = lookupMimeType(img.path).split("/");
+        FormData formData = FormData.fromMap({
+          "email": "$email",
+          "password": "$pwd",
+          "profile.name": "$name",
+          "profile.picture": await MultipartFile.fromFile(img.path,
               filename: fileName,
-              contentType: new MediaType(mimeTypeData[0], mimeTypeData[1])),
-        }
-      });
-      final response = await Dio().post(
-        kurl + '/api/users/',
-        data: formData,
-        options: Options(
-          responseType: ResponseType.json,
+              contentType: MediaType(mimeTypeData[0], mimeTypeData[1])),
+        });
+        final response = await Dio().post(
+          kurl + '/api/users/',
+          data: formData,
+          // options: Options(
+          // responseType: ResponseType.json,
+          // headers: {
+          //   "Content-Type": "application/json",
+          // },
+          //     ),
+        );
+        _pwd = pwd;
+        return response.statusCode;
+      }
+
+      // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>201>>>>226>>>>>
+
+      if (img == null) {
+        final response = await http.post(
+          kurl + '/api/users/',
           headers: {
             "Content-Type": "application/json",
           },
-        ),
-      );
-      //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> print(response);
-      // var responseS = await http.post(
-      //   kurl + '/api/users/',
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: json.encode(
-      //     {
-      //       "email": "$email",
-      //       "password": "$pwd",
-      //       "profile": {
-      //         "name": "$name",
-      //         "picture": img == null ? null : "$img",
-      //       }
-      //     },
-      //   ),
-      // );
-      // _pwd = pwd;
-      // print(responseS.statusCode);
-      // print(responseS.body);
-
-      // return responseS.statusCode;
+          body: json.encode(
+            {
+              "email": "$email",
+              "password": "$pwd",
+              "profile": {
+                "name": "$name",
+                "picture": null,
+              }
+            },
+          ),
+        );
+        _pwd = pwd;
+        return response.statusCode;
+      }
     } catch (error) {
       print(error);
       return -1;
@@ -143,7 +150,10 @@ class Auth extends ChangeNotifier {
         final responseData = json.decode(response.body);
         _atoken = responseData["access"];
         _rtoken = responseData["refresh"];
+        this.token = _atoken;
+        rTOKEN = _rtoken;
       }
+
       return response.statusCode;
     } catch (error) {
       print(error);
@@ -166,7 +176,6 @@ class Auth extends ChangeNotifier {
       print(response.statusCode);
       print(response.body);
       if (response.statusCode == 202) {
-        tokenRefresh(_rtoken);
         final responseData = json.decode(response.body);
         List profile = [
           responseData["name"],
@@ -178,6 +187,19 @@ class Auth extends ChangeNotifier {
         data.add(profile);
         isAuth = true;
         notifyListeners();
+        tokenRefresh(_rtoken);
+        if (pref != null) pref.clear();
+        pref = await SharedPreferences.getInstance();
+        final userData = json.encode(
+          {
+            "refresh": rTOKEN,
+            "name": responseData["name"],
+            "email": responseData["email"],
+            "is_teacher": !responseData["is_teacher"],
+            "picture": responseData["picture"],
+          },
+        );
+        pref.setString("userData", userData);
       }
       return response.statusCode;
     } catch (error) {
@@ -222,6 +244,20 @@ class Auth extends ChangeNotifier {
           Duration(minutes: 19),
           () => tokenRefresh(_rtoken),
         );
+        rTOKEN = _rtoken;
+        if (pref != null) pref.clear();
+        pref = await SharedPreferences.getInstance();
+        final userData = json.encode(
+          {
+            "refresh": rTOKEN,
+            "name": responseData["name"],
+            "email": responseData["email"],
+            "is_teacher": !responseData["is_teacher"],
+            "picture": responseData["picture"],
+          },
+        );
+        pref.setString("userData", userData);
+        print(pref);
       }
       return responseL.statusCode;
     } catch (error) {
@@ -230,12 +266,12 @@ class Auth extends ChangeNotifier {
     }
   }
 
-  Future<void> tokenRefresh(token) async {
+  Future<void> tokenRefresh(toke) async {
     try {
       var responseTR = await http.post(
         kurl + '/api/login/refresh/',
         body: {
-          "refresh": "$token",
+          "refresh": "$toke",
         },
       );
       print(responseTR.statusCode);
@@ -285,5 +321,23 @@ class Auth extends ChangeNotifier {
       print(error);
       return -1;
     }
+  }
+
+  Future<bool> autoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!prefs.containsKey("userData")) {
+      return false;
+    }
+    return true;
+    final extractedUserData = json.decode(prefs.getString("userData"));
+    print(extractedUserData);
+    final tok = extractedUserData["refresh"];
+    tokenRefresh(tok);
+    data[0] = extractedUserData["name"];
+    data[1] = extractedUserData["email"];
+    data[2] = extractedUserData["is_teacher"];
+    data[3] = extractedUserData["picture"];
+    this.isAuth = true;
+    notifyListeners();
   }
 }
