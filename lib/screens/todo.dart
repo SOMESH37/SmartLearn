@@ -153,7 +153,7 @@ class _TodoState extends State<Todo> {
                       ),
                       Expanded(
                         child: ListView.builder(
-                          //padding: EdgeInsets.only(top: 30),
+                          physics: BouncingScrollPhysics(),
                           itemCount: Provider.of<DataAllClasses>(context)
                               .mytodo
                               .length,

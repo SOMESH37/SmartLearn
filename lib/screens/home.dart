@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,8 @@ import 'package:provider/provider.dart';
 import '../model/home_net.dart';
 import '../model/auth_net.dart';
 import 'package:date_format/date_format.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 
 var gapH, gapW;
 bool isStd;
@@ -111,53 +114,58 @@ class _HomeState extends State<Home> {
             ),
           ],
         ),
-        body: Column(
-          children: [
-            isLoadd
-                ? LinearProgressIndicator(
-                    minHeight: 3,
-                  )
-                : SizedBox(
-                    height: 3,
-                  ),
-            Provider.of<DataAllClasses>(context).myclasses.isEmpty
-                ? Expanded(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Image.asset(
-                            resourceHelper[6],
-                            width: 250,
-                          ),
-                          Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 15),
-                                child: Text(
-                                  'Not enrolled in any class',
-                                  style: TextStyle(
-                                    color: colors[5],
-                                    fontSize: 25,
+        body: RefreshIndicator(
+          onRefresh: () async {
+            initState();
+          },
+          child: Column(
+            children: [
+              isLoadd
+                  ? LinearProgressIndicator(
+                      minHeight: 3,
+                    )
+                  : SizedBox(
+                      height: 3,
+                    ),
+              Provider.of<DataAllClasses>(context).myclasses.isEmpty
+                  ? Expanded(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Image.asset(
+                              resourceHelper[6],
+                              width: 250,
+                            ),
+                            Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 15),
+                                  child: Text(
+                                    'Not enrolled in any class',
+                                    style: TextStyle(
+                                      color: colors[5],
+                                      fontSize: 25,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              Text(
-                                Provider.of<Auth>(context).data[0][2]
-                                    ? 'Click + to Join new class'
-                                    : 'Click + to Create new class',
-                                style: TextStyle(
-                                  color: colors[5],
+                                Text(
+                                  Provider.of<Auth>(context).data[0][2]
+                                      ? 'Click + to Join new class'
+                                      : 'Click + to Create new class',
+                                  style: TextStyle(
+                                    color: colors[5],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                : Expanded(child: ClassColumn())
-          ],
+                    )
+                  : Expanded(child: ClassColumn())
+            ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.white,
@@ -184,117 +192,110 @@ class _HomeState extends State<Home> {
 class ClassColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.only(top: 9),
-            itemCount: Provider.of<DataAllClasses>(context).myclasses.length,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
-                  elevation: 0,
-                  color: colors[index % 5][0],
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(
-                      color: colors[index % 5][1],
-                      width: 4,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Stack(
-                    alignment: AlignmentDirectional.bottomCenter,
-                    children: [
-                      Image.asset(
-                        resourceHelper[index % 3 + 3],
-                        width: 200,
-                        color: Colors.white38,
-                      ),
-                      Container(
-                        constraints: BoxConstraints(
-                          minHeight: 150,
-                        ),
-                        child: ListTile(
-                          enabled: true,
-                          contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => MyClass(
-                                    Provider.of<DataAllClasses>(context)
-                                        .myclasses[index][0],
-                                    colors[index % 5][0],
-                                    Provider.of<DataAllClasses>(context)
-                                        .myclasses[index][5],
-                                    index),
-                              ),
-                            );
-                          },
-                          title: Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: 6,
-                            ),
-                            child: Text(
-                              '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
-                              style: TextStyle(
-                                color: colors[6],
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${Provider.of<DataAllClasses>(context).myclasses[index][1]}',
-                            style: TextStyle(
-                              color: colors[6],
-                              fontSize: 13,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 2,
-                          ),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.white,
-                                backgroundImage: Provider.of<DataAllClasses>(
-                                                context)
-                                            .myclasses[index][3] ==
-                                        null
-                                    ? AssetImage(resourceHelper[2])
-                                    : NetworkImage(
-                                        '${Provider.of<DataAllClasses>(context).myclasses[index][3]}'),
-                              ),
-                              // Text(
-                              //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
-                              //   style: TextStyle(
-                              //     color: colors[6],
-                              //     fontSize: 12,
-                              //   ),
-                              //   overflow: TextOverflow.ellipsis,
-                              //   maxLines: null,
-                              // ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+    return ListView.builder(
+      physics: BouncingScrollPhysics(),
+      padding: EdgeInsets.only(top: 9),
+      itemCount: Provider.of<DataAllClasses>(context).myclasses.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
           ),
-        ),
-      ],
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            elevation: 0,
+            color: colors[index % 5][0],
+            shape: RoundedRectangleBorder(
+              side: BorderSide(
+                color: colors[index % 5][1],
+                width: 4,
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Stack(
+              alignment: AlignmentDirectional.bottomCenter,
+              children: [
+                Image.asset(
+                  resourceHelper[index % 3 + 3],
+                  width: 200,
+                  color: Colors.white38,
+                ),
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: 150,
+                  ),
+                  child: ListTile(
+                    enabled: true,
+                    contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => MyClass(
+                              Provider.of<DataAllClasses>(context)
+                                  .myclasses[index][0],
+                              colors[index % 5][0],
+                              Provider.of<DataAllClasses>(context)
+                                  .myclasses[index][5],
+                              index),
+                        ),
+                      );
+                    },
+                    title: Padding(
+                      padding: const EdgeInsets.only(
+                        bottom: 6,
+                      ),
+                      child: Text(
+                        '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
+                        style: TextStyle(
+                          color: colors[6],
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${Provider.of<DataAllClasses>(context).myclasses[index][1]}',
+                      style: TextStyle(
+                        color: colors[6],
+                        fontSize: 13,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.white,
+                          backgroundImage: Provider.of<DataAllClasses>(context)
+                                      .myclasses[index][3] ==
+                                  null
+                              ? AssetImage(resourceHelper[2])
+                              : NetworkImage(
+                                  '${Provider.of<DataAllClasses>(context).myclasses[index][3]}'),
+                        ),
+                        // Text(
+                        //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
+                        //   style: TextStyle(
+                        //     color: colors[6],
+                        //     fontSize: 12,
+                        //   ),
+                        //   overflow: TextOverflow.ellipsis,
+                        //   maxLines: null,
+                        // ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -310,16 +311,22 @@ class MyClass extends StatefulWidget {
 }
 
 class _MyClassState extends State<MyClass> {
-  int rep1 = -20, rep2 = -20;
+  int rep1 = -20, rep2 = -20, rep3 = -20;
   bool isL = true;
   @override
   void initState() {
     Provider.of<DataAllClasses>(context, listen: false).assign.clear();
     Future.delayed(Duration.zero, () async {
-      rep1 = await Provider.of<DataAllClasses>(context, listen: false)
-          .updateAssign(context, widget.classID);
       rep2 = await Provider.of<DataAllClasses>(context, listen: false)
           .updateDiscuss(context, widget.classID);
+      rep1 = await Provider.of<DataAllClasses>(context, listen: false)
+          .updateAssign(context, widget.classID);
+      if (isStd)
+        rep3 = await Provider.of<DataAllClasses>(context, listen: false)
+            .grade(context, widget.classID);
+      else
+        rep3 = await Provider.of<DataAllClasses>(context, listen: false)
+            .allGrades(context, widget.classID);
     });
     super.initState();
   }
@@ -381,8 +388,7 @@ class _MyClassState extends State<MyClass> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2.7,
                             backgroundColor: Colors.transparent,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(colors[6]),
+                            valueColor: AlwaysStoppedAnimation(colors[6]),
                           ),
                         ),
                       )
@@ -490,7 +496,14 @@ class _MyClassState extends State<MyClass> {
                       ),
                     )
                   : Work(widget.classID),
-              Grades(),
+              rep3 < -10
+                  ? Center(
+                      child: Image.asset(
+                        resourceHelper[8],
+                        width: 200,
+                      ),
+                    )
+                  : isStd ? Grades() : AllGrades(),
             ],
           ),
         );
@@ -520,6 +533,7 @@ class Discuss extends StatelessWidget {
                     tileDiscuss(context, index, classID),
                 itemCount: Provider.of<DataAllClasses>(context).mydis.length,
               ),
+        backgroundColor: Colors.blueGrey[50],
         floatingActionButton: FloatingActionButton(
           backgroundColor: Colors.white,
           onPressed: () {
@@ -607,7 +621,7 @@ class Discuss extends StatelessWidget {
                   },
                 );
               },
-              backgroundColor: Colors.blueGrey[50],
+              backgroundColor: Colors.white,
               elevation: double.infinity,
               clipBehavior: Clip.hardEdge,
               shape: RoundedRectangleBorder(
@@ -828,12 +842,203 @@ class _WorkState extends State<Work> {
   }
 }
 
+class AllGrades extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Provider.of<DataAllClasses>(context).grades.isEmpty
+          ? Center(
+              child: Image.asset(
+                resourceHelper[8],
+                width: 200,
+              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              itemCount: Provider.of<DataAllClasses>(context).grades.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                  child: Stack(
+                    alignment: AlignmentDirectional.centerStart,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LinearProgressIndicator(
+                            backgroundColor: Colors.lightBlue[100],
+                            valueColor: AlwaysStoppedAnimation(Colors.blue),
+                            value: Provider.of<DataAllClasses>(context)
+                                    .grades[index][1] /
+                                100,
+                            minHeight: 32,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 25,
+                                  backgroundColor: Colors.white,
+                                  backgroundImage: Provider.of<DataAllClasses>(
+                                                  context)
+                                              .grades[index][2] ==
+                                          null
+                                      ? AssetImage(resourceHelper[2])
+                                      : NetworkImage(
+                                          '${Provider.of<DataAllClasses>(context).grades[index][2]}'),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6),
+                                    child: Text(
+                                      '${Provider.of<DataAllClasses>(context).grades[index][0]}',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 18),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Text(
+                                '${Provider.of<DataAllClasses>(context).grades[index][1]}%'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
+}
+
 class Grades extends StatelessWidget {
   @override
-  Widget build(BuildContext cxt) {
-    return Center(
-      child: Text(
-          'Efficiently mesh strategic collaboration and idea-sharing whereas standards compliant ideas. Globally negotiate installed base information through superior collaboration and idea-sharing.'),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Provider.of<DataAllClasses>(context).grades.isNotEmpty
+          ? Center(
+              child: Image.asset(
+                resourceHelper[8],
+                width: 200,
+              ),
+            )
+          : Column(
+              children: [
+                Stack(
+                  alignment: AlignmentDirectional.centerStart,
+                  children: [
+                    LinearProgressIndicator(
+                      backgroundColor: Colors.lightBlue[100],
+                      // valueColor: AlwaysStoppedAnimation(Colors.green[300]),
+                      value: 0.7,
+                      minHeight: gapH * 0.07,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text('Total: 70%',
+                          style: TextStyle(
+                              color: colors[6],
+                              fontSize: gapH * 0.028,
+                              fontWeight: FontWeight.w500)),
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Assignment',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w500, fontSize: 18)),
+                      Text('Marks'),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                    itemCount: 20,
+                    itemBuilder: (context, index) {
+                      return Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 5),
+                                          child: Text(
+                                            'segsegtdjerdjsr',
+                                            style: TextStyle(
+                                                fontSize: 19,
+                                                fontWeight: FontWeight.w500,
+                                                color: colors[5]),
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: true,
+                                          ),
+                                        ),
+                                        Text(
+                                          formatDate(DateTime.now(), [
+                                            h,
+                                            ':',
+                                            nn,
+                                            ' ',
+                                            am,
+                                            ' - ',
+                                            d,
+                                            '/',
+                                            M,
+                                            '/',
+                                            yy
+                                          ]),
+                                          style: TextStyle(
+                                            color: colors[5],
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [Text('segs'), Icon(Icons.ac_unit)],
+                              ),
+                            ],
+                          ),
+                          Divider(),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -1200,7 +1405,10 @@ class CreateWork extends StatefulWidget {
 }
 
 class _CreateWorkState extends State<CreateWork> {
-  var title, des, now, maxMarks, file;
+  File pickedPDF;
+  String pName;
+  int pSize;
+  var title, des, now, maxMarks;
   DateTime date = DateTime.now().add(Duration(days: 1));
   TimeOfDay time = TimeOfDay(hour: 21, minute: 0);
   bool isLoad = false;
@@ -1208,7 +1416,6 @@ class _CreateWorkState extends State<CreateWork> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !isLoad,
         title: Text(
           'Create new assignment',
           style: TextStyle(
@@ -1230,10 +1437,10 @@ class _CreateWorkState extends State<CreateWork> {
               ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: IgnorePointer(
-            ignoring: isLoad,
+        child: IgnorePointer(
+          ignoring: isLoad,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
                 Container(
@@ -1430,22 +1637,56 @@ class _CreateWorkState extends State<CreateWork> {
                         ),
                         child: FlatButton(
                           padding: EdgeInsets.symmetric(
-                              horizontal: 30, vertical: 10),
-                          onPressed: () {
+                              horizontal: 10, vertical: 10),
+                          onPressed: () async {
                             FocusScope.of(context).requestFocus(FocusNode());
+                            FilePickerResult result = await FilePicker.platform
+                                .pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: [
+                                  'pdf'
+                                ]).timeout(Duration(minutes: 1), onTimeout: () {
+                              Fluttertoast.showToast(
+                                  msg: 'Unable to prepare the selected PDF');
+                            });
+                            if (result == null) return;
+                            if (mounted)
+                              setState(() {
+                                pickedPDF = File(result.files.single.path);
+                                pName = result.files.single.name;
+                                pSize = result.files.single.size;
+                              });
                           },
-                          child: Text(
-                            '+ Select file',
-                            style: TextStyle(
-                              color: Colors.blue,
-                            ),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(100),
-                            side: BorderSide(
-                              width: 0.75,
-                            ),
-                          ),
+                          child: pName == null
+                              ? Text(
+                                  '+ Select a file',
+                                  style: TextStyle(color: Colors.blue),
+                                )
+                              : Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '$pName',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Text(
+                                      '$pSize KB',
+                                    ),
+                                  ],
+                                ),
+                          shape: pName == null
+                              ? RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(100),
+                                  side: BorderSide(
+                                    color: Colors.blue,
+                                    width: 0.75,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                       Container(
@@ -1460,6 +1701,7 @@ class _CreateWorkState extends State<CreateWork> {
                                 des == null ||
                                 now == null ||
                                 maxMarks == null ||
+                                pickedPDF == null ||
                                 des.length < 1 ||
                                 title.length < 1) {
                               HapticFeedback.mediumImpact();
@@ -1472,7 +1714,7 @@ class _CreateWorkState extends State<CreateWork> {
                             int res = await Provider.of<DataAllClasses>(context,
                                     listen: false)
                                 .createAssign(context, widget.classID, title,
-                                    des, now, maxMarks, file);
+                                    des, now, maxMarks, pickedPDF);
                             if (res > -10 && mounted) {
                               setState(() {
                                 isLoad = false;
@@ -1645,7 +1887,13 @@ class _ViewWorkState extends State<ViewWork> {
                           padding: EdgeInsets.zero,
                           minWidth: 0,
                           splashColor: Colors.transparent,
-                          onPressed: () {},
+                          onPressed: () {
+                            pdfView(
+                                context,
+                                Provider.of<DataAllClasses>(context,
+                                        listen: false)
+                                    .assign[widget.idx][5]);
+                          },
                           child: Text(
                             'View',
                             style: TextStyle(color: Colors.blue),
@@ -1835,7 +2083,13 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                         padding: EdgeInsets.zero,
                         minWidth: 0,
                         splashColor: Colors.transparent,
-                        onPressed: () {},
+                        onPressed: () {
+                          pdfView(
+                              context,
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .ans[idx][1]);
+                        },
                         child: Text(
                           'View',
                           style: TextStyle(color: Colors.blue),
@@ -1995,6 +2249,9 @@ class _UploadWorkState extends State<UploadWork> {
     super.initState();
   }
 
+  File pickedPDF;
+  String pName;
+  int pSize;
   bool isLoad = false;
   @override
   Widget build(BuildContext context) {
@@ -2114,7 +2371,13 @@ class _UploadWorkState extends State<UploadWork> {
                               padding: EdgeInsets.zero,
                               minWidth: 0,
                               splashColor: Colors.transparent,
-                              onPressed: () {},
+                              onPressed: () {
+                                pdfView(
+                                    context,
+                                    Provider.of<DataAllClasses>(context,
+                                            listen: false)
+                                        .assign[widget.idx][5]);
+                              },
                               child: Text(
                                 'View',
                                 style: TextStyle(color: Colors.blue),
@@ -2228,7 +2491,13 @@ class _UploadWorkState extends State<UploadWork> {
                                       padding: EdgeInsets.zero,
                                       minWidth: 0,
                                       splashColor: Colors.transparent,
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        pdfView(
+                                            context,
+                                            Provider.of<DataAllClasses>(context,
+                                                    listen: false)
+                                                .ans[0][1]);
+                                      },
                                       child: Text(
                                         'View',
                                         style: TextStyle(color: Colors.blue),
@@ -2253,23 +2522,63 @@ class _UploadWorkState extends State<UploadWork> {
                                   ),
                                   child: FlatButton(
                                     padding: EdgeInsets.symmetric(
-                                        horizontal: 30, vertical: 10),
-                                    onPressed: () {
+                                        horizontal: 20, vertical: 10),
+                                    onPressed: () async {
                                       FocusScope.of(context)
                                           .requestFocus(FocusNode());
+                                      FilePickerResult result =
+                                          await FilePicker.platform.pickFiles(
+                                              type: FileType.custom,
+                                              allowedExtensions: [
+                                            'pdf'
+                                          ]).timeout(Duration(minutes: 1),
+                                              onTimeout: () {
+                                        Fluttertoast.showToast(
+                                            msg:
+                                                'Unable to prepare the selected PDF');
+                                      });
+                                      if (result == null) return;
+                                      if (mounted)
+                                        setState(() {
+                                          pickedPDF =
+                                              File(result.files.single.path);
+                                          pName = result.files.single.name;
+                                          pSize = result.files.single.size;
+                                        });
                                     },
-                                    child: Text(
-                                      '+ Select file',
-                                      style: TextStyle(
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(100),
-                                      side: BorderSide(
-                                        width: 0.75,
-                                      ),
-                                    ),
+                                    child: pName == null
+                                        ? Text(
+                                            '+ Select a file',
+                                            style:
+                                                TextStyle(color: Colors.blue),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  '$pName',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              Text(
+                                                '$pSize KB',
+                                              ),
+                                            ],
+                                          ),
+                                    shape: pName == null
+                                        ? RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(100),
+                                            side: BorderSide(
+                                              color: Colors.blue,
+                                              width: 0.75,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                 ),
                                 Container(
@@ -2280,7 +2589,7 @@ class _UploadWorkState extends State<UploadWork> {
                                     padding: EdgeInsets.symmetric(
                                         horizontal: 30, vertical: 10),
                                     onPressed: () async {
-                                      if (false) {
+                                      if (pickedPDF == null) {
                                         HapticFeedback.mediumImpact();
                                         return;
                                       }
@@ -2300,7 +2609,7 @@ class _UploadWorkState extends State<UploadWork> {
                                                           context,
                                                           listen: false)
                                                       .assign[widget.idx][0],
-                                                  null);
+                                                  pickedPDF);
                                       if (res > -10 && mounted) {
                                         setState(() {
                                           isLoad = false;
@@ -2309,7 +2618,6 @@ class _UploadWorkState extends State<UploadWork> {
                                           Navigator.pop(context);
                                         } else if (res == 200) {
                                           setState(() {
-                                            print('awc');
                                             widget.isAttempted = true;
                                           });
                                         } else
@@ -2336,4 +2644,83 @@ class _UploadWorkState extends State<UploadWork> {
             ),
     );
   }
+}
+
+pdfView(context, String url) {
+  if (url == null) {
+    HapticFeedback.heavyImpact();
+    return;
+  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PDF().cachedFromUrl(url,
+          maxNrOfCacheObjects: 6,
+          placeholder: (p) => Scaffold(
+                appBar: AppBar(
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  iconTheme: IconThemeData(color: colors[5]),
+                ),
+                backgroundColor: colors[6],
+                body: Center(
+                    child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(
+                        'Progress: $p%',
+                        style: TextStyle(fontSize: 25),
+                      ),
+                    ),
+                    CircularProgressIndicator(
+                      value: p / 100,
+                    )
+                  ],
+                )),
+              ),
+          errorWidget: (e) {
+            Fluttertoast.showToast(msg: 'Cant\'t load PDF!');
+            return Scaffold(
+              appBar: AppBar(
+                backgroundColor: Colors.white,
+                elevation: 0,
+                automaticallyImplyLeading: false,
+              ),
+              backgroundColor: colors[6],
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 30),
+                      child: Text(
+                        e.toString(),
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    FlatButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Fluttertoast.showToast(msg: 'Sorry for inconvenience');
+                      },
+                      child: Text(
+                        'Close',
+                        style: TextStyle(color: colors[6]),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      color: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+    ),
+  );
 }

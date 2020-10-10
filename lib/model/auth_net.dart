@@ -49,7 +49,7 @@ class Auth extends ChangeNotifier {
 
       // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>201>>>>226>>>>>
 
-      if (img == null) {
+      else {
         final response = await http.post(
           kurl + '/api/users/',
           headers: {
@@ -295,7 +295,7 @@ class Auth extends ChangeNotifier {
       }
     } catch (error) {
       print(error);
-      tokenRefresh(_rtoken);
+      // tokenRefresh(_rtoken);
       print('Token can\'t be refreshed!');
     }
   }
@@ -323,21 +323,21 @@ class Auth extends ChangeNotifier {
     }
   }
 
-  Future<bool> autoLogin() async {
+  Future<void> autoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     if (!prefs.containsKey("userData")) {
-      return false;
+      // return false;
     }
-    return true;
     final extractedUserData = json.decode(prefs.getString("userData"));
     print(extractedUserData);
     final tok = extractedUserData["refresh"];
-    tokenRefresh(tok);
+    // tokenRefresh(tok);
     data[0] = extractedUserData["name"];
     data[1] = extractedUserData["email"];
     data[2] = extractedUserData["is_teacher"];
     data[3] = extractedUserData["picture"];
-    this.isAuth = true;
+    isAuth = true;
     notifyListeners();
+    // return true;
   }
 }

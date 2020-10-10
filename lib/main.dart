@@ -23,30 +23,33 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: Consumer<Auth>(
-        builder: (context, auth, _) => MaterialApp(
-          theme: ThemeData(
-            fontFamily: 'Gilroy',
-          ),
-          routes: {
-            // '/': (context) => Front(),
-            '/signup': (context) => SignUp(),
-            '/otp': (context) => Otp(),
-            '/login': (context) => Login(),
-            '/changepwd': (context) => ChangePwd(),
-          },
-          home: auth.isAuth
-              ? Home()
-              :
-              // First()
+        builder: (context, auth, _) {
+          print(auth.isAuth);
+          return MaterialApp(
+            theme: ThemeData(
+              fontFamily: 'Gilroy',
+            ),
+            routes: {
+              // '/': (context) => Front(),
+              '/signup': (context) => SignUp(),
+              '/otp': (context) => Otp(),
+              '/login': (context) => Login(),
+              '/changepwd': (context) => ChangePwd(),
+            },
+            home: auth.isAuth
+                ? Home()
+                :
+                // First()
 
-              FutureBuilder(
-                  future: auth.autoLogin(),
-                  builder: (context, snapshot) =>
-                      snapshot.connectionState == ConnectionState.waiting
-                          ? SplashScreen()
-                          : First(),
-                ),
-        ),
+                FutureBuilder(
+                    future: auth.autoLogin(),
+                    builder: (context, snapshot) =>
+                        snapshot.connectionState == ConnectionState.waiting
+                            ? SplashScreen()
+                            : First(),
+                  ),
+          );
+        },
       ),
     );
   }

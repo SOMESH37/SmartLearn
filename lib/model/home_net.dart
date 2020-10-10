@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +8,10 @@ import 'dart:convert';
 import '../helper.dart';
 import 'auth_net.dart';
 import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import 'package:path/path.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 
 class DataAllClasses extends ChangeNotifier {
   List myclasses = [];
@@ -13,6 +19,7 @@ class DataAllClasses extends ChangeNotifier {
   List assign = [];
   List ans = [];
   List mydis = [];
+  List grades = [];
   Future updateClass(BuildContext context) async {
     try {
       var response = await http.get(
@@ -149,28 +156,50 @@ class DataAllClasses extends ChangeNotifier {
   }
 
   Future<int> createAssign(BuildContext context, int classID, title, des, time,
-      maxMarks, file) async {
+      maxMarks, File file) async {
     try {
-      var response = await http.post(
+      String fileName = basename(file.path);
+      final mimeTypeData = lookupMimeType(file.path).split("/");
+      FormData formData = FormData.fromMap({
+        "title": "$title",
+        "description": "$des",
+        "submit_by": "$time",
+        "max_marks": "$maxMarks",
+        "file_linked": await MultipartFile.fromFile(file.path,
+            filename: fileName,
+            contentType: MediaType(mimeTypeData[0], mimeTypeData[1])),
+      });
+      final response = await Dio().post(
         kurl + '/class/classroom/$classID/assignment/',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization':
-              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
-        },
-        body: json.encode(
-          {
-            "title": "$title",
-            "description": "$des",
-            "submit_by": "$time",
-            "max_marks": "$maxMarks",
-            "file_linked": file == null ? null : file,
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization':
+                'Bearer ${Provider.of<Auth>(context, listen: false).token}',
           },
         ),
       );
+
+      // var response = await http.post(
+      //   kurl + '/class/classroom/$classID/assignment/',
+      //   headers: {
+      //     'Accept': 'application/json',
+      //     'Content-Type': 'application/json',
+      //     'Authorization':
+      //         'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+      //   },
+      //   body: json.encode(
+      //     {
+      //       "title": "$title",
+      //       "description": "$des",
+      //       "submit_by": "$time",
+      //       "max_marks": "$maxMarks",
+      //       "file_linked": file == null ? null : file,
+      //     },
+      //   ),
+      // );
+
       print(response.statusCode);
-      print(response.body);
       if (response.statusCode == 201) {
         updateAssign(context, classID);
       }
@@ -264,7 +293,7 @@ class DataAllClasses extends ChangeNotifier {
         },
       );
       print(response.statusCode);
-
+      print(response.body);
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData == null) {
@@ -289,27 +318,29 @@ class DataAllClasses extends ChangeNotifier {
     }
   }
 
-  Future uploadAns(BuildContext context, classID, assID, file) async {
+  Future uploadAns(BuildContext context, classID, assID, File file) async {
     try {
-      var response = await http.post(
+      String fileName = basename(file.path);
+      final mimeTypeData = lookupMimeType(file.path).split("/");
+      FormData formData = FormData.fromMap({
+        "file_linked": await MultipartFile.fromFile(file.path,
+            filename: fileName,
+            contentType: MediaType(mimeTypeData[0], mimeTypeData[1])),
+      });
+      final response = await Dio().post(
         kurl + '/class/classroom/$classID/assignment/$assID/answer/',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization':
-              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(
-          {
-            "file_linked": file,
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization':
+                'Bearer ${Provider.of<Auth>(context, listen: false).token}',
           },
         ),
       );
       print(response.statusCode);
       if (response.statusCode == 201) {
-        final responseData = json.decode(response.body);
         updateAssign(context, classID);
-        final res = await viewAns(context, classID, assID, responseData["id"]);
+        final res = await viewAns(context, classID, assID, response.data["id"]);
         if (res == 200) return res;
       }
       return response.statusCode;
@@ -492,6 +523,82 @@ class DataAllClasses extends ChangeNotifier {
       if (response.statusCode == 202) {
         int res = await updateDiscuss(context, classID);
         if (res == 200) return res;
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future allGrades(BuildContext context, int classID) async {
+    try {
+      var response = await http.get(
+        kurl + '/class/classroom/$classID/portal/teacher/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('no students');
+          return;
+        }
+        grades.clear();
+        responseData.forEach((grdNum) {
+          grades.add([
+            grdNum["student"]["name"],
+            grdNum["percentage"],
+            grdNum["student"]["picture"],
+          ]);
+        });
+        grades.sort((a, b) => a.toString().compareTo(b.toString()));
+        notifyListeners();
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future grade(BuildContext context, int classID) async {
+    try {
+      var response = await http.get(
+        kurl + '/class/classroom/$classID/portal/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 20) {
+        final responseData = json.decode(response.body);
+        if (responseData == null) {
+          print('no classes');
+          return;
+        }
+        grades.clear();
+        responseData.forEach((grdNum) {
+          grades.add([
+            grdNum["subject_name"],
+            grdNum["description"],
+            grdNum["teacher"]["name"],
+            grdNum["teacher"]["picture"],
+            grdNum["class_code"],
+            grdNum["id"],
+            grdNum["student_no"],
+          ]);
+        });
+        print(grades);
+        notifyListeners();
       }
       return response.statusCode;
     } catch (error) {
