@@ -4,7 +4,7 @@ import 'screens/todo.dart';
 import './model/auth_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://d401eed842a0.ngrok.io";
+var kurl = "https://0dd136efaa24.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -120,11 +120,11 @@ class _DrawState extends State<Draw> {
                       : NetworkImage(
                           '${Provider.of<Auth>(context).data[0][3]}'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: 12,
-                  ),
-                  child: Expanded(
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: 12,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -134,24 +134,22 @@ class _DrawState extends State<Draw> {
                             fontSize: 19,
                             fontWeight: FontWeight.bold,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.fade,
                         ),
-                        Text(
-                          '${Provider.of<Auth>(context).data[0][1]}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 15,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Text(
+                            '${Provider.of<Auth>(context).data[0][1]}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 15,
+                            ),
                           ),
-                          // maxLines: null,
-                          overflow: TextOverflow.fade,
                         ),
                         Text(
                           Provider.of<Auth>(context).data[0][2]
                               ? 'Student'
                               : 'Teacher',
                           style: TextStyle(),
-                          maxLines: 1,
                         ),
                       ],
                     ),

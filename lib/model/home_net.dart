@@ -209,6 +209,7 @@ class DataAllClasses extends ChangeNotifier {
       return response.statusCode;
     } catch (error) {
       print(error);
+      if (error.toString().substring(53, 56) == 400.toString()) return 400;
       return -1;
     }
   }
@@ -579,22 +580,22 @@ class DataAllClasses extends ChangeNotifier {
       );
       print(response.statusCode);
       print(response.body);
-      if (response.statusCode == 20) {
+      if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData == null) {
-          print('no classes');
+          print('impossible');
           return;
         }
         grades.clear();
-        responseData.forEach((grdNum) {
+        grades.add(responseData["percentage"]);
+        responseData["assignments"].forEach((grdNum) {
           grades.add([
-            grdNum["subject_name"],
-            grdNum["description"],
-            grdNum["teacher"]["name"],
-            grdNum["teacher"]["picture"],
-            grdNum["class_code"],
-            grdNum["id"],
-            grdNum["student_no"],
+            grdNum["assignment"],
+            grdNum["max_marks"],
+            grdNum["submitted"],
+            grdNum["checked"],
+            grdNum["marks_scored"],
+            grdNum["due_date"],
           ]);
         });
         print(grades);

@@ -47,11 +47,7 @@ class _TodoState extends State<Todo> {
       }
     }
     return Scaffold(
-      drawer: Container(
-          constraints: BoxConstraints(
-            minWidth: 310,
-          ),
-          child: Draw()),
+      drawer: Draw(),
       appBar: AppBar(
         backgroundColor: colors[6],
         elevation: 0,

@@ -24,7 +24,6 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<Auth>(
         builder: (context, auth, _) {
-          print(auth.isAuth);
           return MaterialApp(
             theme: ThemeData(
               fontFamily: 'Gilroy',

@@ -979,7 +979,10 @@ class _ChangePwdState extends State<ChangePwd> {
                             //   ),
                             //   (_) => false,
                             // );
-                          } else
+                          } else if (res == 406)
+                            showMyDialog(
+                                context, true, 'Can\'t use previous password!');
+                          else
                             showMyDialog(context, true, 'Something went wrong');
                           //ERROR DIALOG res==-1 -> something went wrong
 

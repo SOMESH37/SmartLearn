@@ -266,7 +266,7 @@ class Auth extends ChangeNotifier {
     }
   }
 
-  Future<void> tokenRefresh(toke) async {
+  Future<int> tokenRefresh(toke) async {
     try {
       var responseTR = await http.post(
         kurl + '/api/login/refresh/',
@@ -288,15 +288,17 @@ class Auth extends ChangeNotifier {
         );
       } else if (responseTR.statusCode == 401) {
         this.token = null;
-        isAuth = false;
-        notifyListeners();
+        // isAuth = false;
+        // notifyListeners();
       } else {
         tokenRefresh(_rtoken);
       }
+      return responseTR.statusCode;
     } catch (error) {
       print(error);
-      // tokenRefresh(_rtoken);
+      tokenRefresh(_rtoken);
       print('Token can\'t be refreshed!');
+      return -1;
     }
   }
 
@@ -325,19 +327,22 @@ class Auth extends ChangeNotifier {
 
   Future<void> autoLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!prefs.containsKey("userData")) {
-      // return false;
-    }
+    // prefs.clear();
+    if (!prefs.containsKey("userData")) return;
     final extractedUserData = json.decode(prefs.getString("userData"));
     print(extractedUserData);
     final tok = extractedUserData["refresh"];
-    // tokenRefresh(tok);
-    data[0] = extractedUserData["name"];
-    data[1] = extractedUserData["email"];
-    data[2] = extractedUserData["is_teacher"];
-    data[3] = extractedUserData["picture"];
-    isAuth = true;
-    notifyListeners();
-    // return true;
+    final res = await tokenRefresh(tok);
+    data.clear();
+    data.add([
+      extractedUserData["name"],
+      extractedUserData["email"],
+      extractedUserData["is_teacher"],
+      extractedUserData["picture"]
+    ]);
+    if (res > 0 && token != null) {
+      isAuth = true;
+      notifyListeners();
+    }
   }
 }
