@@ -39,7 +39,6 @@ class MyApp extends StatelessWidget {
                 ? Home()
                 :
                 // First()
-
                 FutureBuilder(
                     future: auth.autoLogin(),
                     builder: (context, snapshot) =>
@@ -57,8 +56,14 @@ class MyApp extends StatelessWidget {
 class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text('Will create it soon!'),
+    return Scaffold(
+      body: AnimatedSplashScreen(
+          splash: 'resources/logo.png',
+          splashIconSize: 300,
+          duration: 1000000000,
+          // curve: Curves.elasticInOut,
+          // animationDuration: Duration(milliseconds: 2000),
+          nextScreen: null),
     );
   }
 }

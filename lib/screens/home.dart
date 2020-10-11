@@ -85,16 +85,25 @@ class _HomeState extends State<Home> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(
-                      Icons.notifications_none,
-                      color: Colors.grey,
-                    ),
+                    icon: Provider.of<DataAllClasses>(context).newNoti
+                        ? Icon(
+                            Icons.notifications_active_rounded,
+                            color: Colors.red[400],
+                          )
+                        : Icon(
+                            Icons.notifications_none,
+                            color: Colors.grey,
+                          ),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => Noti(),
                         ),
                       );
+                      setState(() {
+                        Provider.of<DataAllClasses>(context, listen: false)
+                            .newNoti = false;
+                      });
                     },
                   ),
                   // GestureDetector(
@@ -313,10 +322,10 @@ class _MyClassState extends State<MyClass> {
   bool isL = true;
   @override
   void initState() {
+    Provider.of<DataAllClasses>(context, listen: false).assign.clear();
+    Provider.of<DataAllClasses>(context, listen: false).mydis.clear();
+    Provider.of<DataAllClasses>(context, listen: false).grades.clear();
     Future.delayed(Duration.zero, () async {
-      Provider.of<DataAllClasses>(context, listen: false).assign.clear();
-      Provider.of<DataAllClasses>(context, listen: false).mydis.clear();
-      Provider.of<DataAllClasses>(context, listen: false).grades.clear();
       rep2 = await Provider.of<DataAllClasses>(context, listen: false)
           .updateDiscuss(context, widget.classID);
       rep1 = await Provider.of<DataAllClasses>(context, listen: false)
@@ -577,7 +586,11 @@ class Discuss extends StatelessWidget {
                                   maxLines: 4,
                                   autofocus: true,
                                   inputFormatters: [
-                                    LengthLimitingTextInputFormatter(800)
+                                    LengthLimitingTextInputFormatter(800),
+                                    FilteringTextInputFormatter.deny(
+                                      RegExp(
+                                          r'(\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff])'),
+                                    ),
                                   ],
                                   onChanged: (value) {
                                     dis = value;
@@ -1148,13 +1161,32 @@ class Noti extends StatelessWidget {
         titleSpacing: 0,
         backgroundColor: colors[6],
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.symmetric(
-          vertical: 10,
-        ),
-        itemBuilder: (context, index) => tileNoti(context, index),
-        itemCount: 20,
-      ),
+      body: Provider.of<DataAllClasses>(context).notifications.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    size: 200,
+                    color: colors[5],
+                  ),
+                  Text(
+                    'No recent activity!',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              physics: BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                vertical: 10,
+              ),
+              itemBuilder: (context, index) => tileNoti(context, index),
+              itemCount:
+                  Provider.of<DataAllClasses>(context).notifications.length,
+            ),
     );
   }
 }
@@ -1736,6 +1768,7 @@ class _CreateWorkState extends State<CreateWork> {
                                 ]).timeout(Duration(minutes: 1), onTimeout: () {
                               Fluttertoast.showToast(
                                   msg: 'Unable to prepare the selected PDF');
+                              return;
                             });
                             if (result == null) return;
                             if (mounted)
@@ -1809,10 +1842,9 @@ class _CreateWorkState extends State<CreateWork> {
                               });
                               if (res == 201) {
                                 Navigator.pop(context);
-                              }
-                              if (res == 400) {
+                              } else if (res == 400) {
                                 showMyDialog(context, true,
-                                    'Can\'t use same title again.');
+                                    'Try changing time or title');
                               } else
                                 showMyDialog(
                                     context, true, 'Something went wrong');
@@ -1855,8 +1887,8 @@ class _ViewWorkState extends State<ViewWork> {
   bool isLoad = true;
   @override
   void initState() {
+    Provider.of<DataAllClasses>(context, listen: false).ans.clear();
     Future.delayed(Duration.zero, () async {
-      Provider.of<DataAllClasses>(context, listen: false).ans.clear();
       res = await Provider.of<DataAllClasses>(context, listen: false)
           .viewAllAss(
               context,
@@ -2326,8 +2358,8 @@ class UploadWork extends StatefulWidget {
 class _UploadWorkState extends State<UploadWork> {
   @override
   void initState() {
+    Provider.of<DataAllClasses>(context, listen: false).ans.clear();
     Future.delayed(Duration.zero, () async {
-      Provider.of<DataAllClasses>(context, listen: false).ans.clear();
       if (widget.isAttempted) {
         await Provider.of<DataAllClasses>(context, listen: false).viewAns(
             context,
@@ -2628,6 +2660,7 @@ class _UploadWorkState extends State<UploadWork> {
                                         Fluttertoast.showToast(
                                             msg:
                                                 'Unable to prepare the selected PDF');
+                                        return;
                                       });
                                       if (result == null) return;
                                       if (mounted)

@@ -1,6 +1,4 @@
 import 'dart:io';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -20,6 +18,8 @@ class DataAllClasses extends ChangeNotifier {
   List ans = [];
   List mydis = [];
   List grades = [];
+  List notifications = [];
+  bool newNoti = false;
   Future updateClass(BuildContext context) async {
     try {
       var response = await http.get(
@@ -79,6 +79,9 @@ class DataAllClasses extends ChangeNotifier {
       print(response.statusCode);
       if (response.statusCode == 201) {
         final res = await updateClass(context);
+        notifications.insert(0, [sub, des, DateTime.now()]);
+        newNoti = true;
+        notifyListeners();
         if (res == 200) return res;
       }
       return response.statusCode;
@@ -106,6 +109,14 @@ class DataAllClasses extends ChangeNotifier {
       );
       print(response.statusCode);
       if (response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        notifications.insert(0, [
+          responseData["subject_name"],
+          responseData["description"],
+          DateTime.now()
+        ]);
+        newNoti = true;
+        notifyListeners();
         final res = await updateClass(context);
         if (res == 200) return res;
       }

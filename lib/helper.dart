@@ -1,10 +1,12 @@
+import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
 import 'screens/home.dart';
 import 'screens/todo.dart';
 import './model/auth_net.dart';
+import './model/home_net.dart';
 import 'package:provider/provider.dart';
 
-var kurl = "https://0dd136efaa24.ngrok.io";
+var kurl = "https://1165af1f91d4.ngrok.io";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -257,14 +259,23 @@ tileNoti(context, int index) {
       ),
       child: ListTile(
         contentPadding: EdgeInsets.symmetric(
-          vertical: 10,
+          vertical: 12,
           horizontal: 20,
         ),
-        title: Text('Name $index || Discuss'),
+        title: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            '${Provider.of<DataAllClasses>(context).notifications[index][0]}  ||  ' +
+                formatDate(
+                  Provider.of<DataAllClasses>(context).notifications[index][2],
+                  [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy],
+                ),
+          ),
+        ),
         subtitle: Wrap(
           children: [
             Text(
-                'Dramatically fashion covalent technologies via adaptive covalsd intellectual capital. Dynamically integrate.'),
+                '${Provider.of<DataAllClasses>(context).notifications[index][1]}'),
           ],
         ),
       ),

@@ -291,12 +291,14 @@ class Auth extends ChangeNotifier {
         // isAuth = false;
         // notifyListeners();
       } else {
-        tokenRefresh(_rtoken);
+        if (isAuth)
+          Future.delayed(Duration(seconds: 10), () => tokenRefresh(_rtoken));
       }
       return responseTR.statusCode;
     } catch (error) {
       print(error);
-      tokenRefresh(_rtoken);
+      if (isAuth)
+        Future.delayed(Duration(seconds: 10), () => tokenRefresh(_rtoken));
       print('Token can\'t be refreshed!');
       return -1;
     }
