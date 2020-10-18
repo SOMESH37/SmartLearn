@@ -59,7 +59,7 @@ class SplashScreen extends StatelessWidget {
     return Scaffold(
       body: AnimatedSplashScreen(
           splash: 'resources/logo.png',
-          splashIconSize: 300,
+          splashIconSize: 260,
           duration: 1000000000,
           // curve: Curves.elasticInOut,
           // animationDuration: Duration(milliseconds: 2000),

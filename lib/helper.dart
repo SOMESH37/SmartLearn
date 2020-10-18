@@ -5,8 +5,11 @@ import 'screens/todo.dart';
 import './model/auth_net.dart';
 import './model/home_net.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
-var kurl = "https://1165af1f91d4.ngrok.io";
+var kurl = "https://smartlearn-api.herokuapp.com";
 const List resourceHelper = [
   'resources/front.svg',
   'resources/bottom.svg',
@@ -112,52 +115,62 @@ class _DrawState extends State<Draw> {
               left: 23,
               top: 70,
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: Colors.white,
-                  backgroundImage: Provider.of<Auth>(context).data[0][3] == null
-                      ? AssetImage(resourceHelper[2])
-                      : NetworkImage(
-                          '${Provider.of<Auth>(context).data[0][3]}'),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      left: 12,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${Provider.of<Auth>(context).data[0][0]}',
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Text(
-                            '${Provider.of<Auth>(context).data[0][1]}',
+            child: GestureDetector(
+              onTap: () {
+                // Navigator.of(context).push(
+                //   MaterialPageRoute(
+                //     builder: (cxt) => EditPro(),
+                //   ),
+                // );
+              },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    backgroundImage:
+                        Provider.of<Auth>(context).data[0][3] == null
+                            ? AssetImage(resourceHelper[2])
+                            : NetworkImage(
+                                '${Provider.of<Auth>(context).data[0][3]}'),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${Provider.of<Auth>(context).data[0][0]}',
                             style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 15,
+                              fontSize: 19,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
-                        Text(
-                          Provider.of<Auth>(context).data[0][2]
-                              ? 'Student'
-                              : 'Teacher',
-                          style: TextStyle(),
-                        ),
-                      ],
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 2),
+                            child: Text(
+                              '${Provider.of<Auth>(context).data[0][1]}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            Provider.of<Auth>(context).data[0][2]
+                                ? 'Student'
+                                : 'Teacher',
+                            style: TextStyle(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Divider(
@@ -197,13 +210,6 @@ class _DrawState extends State<Draw> {
               },
             ),
           ),
-          // Divider(),
-          // ListTile(
-          //   leading: Icon(Icons.local_library),
-          //   title: Text('Library'),
-          //   onTap: () {},
-          // ),
-          //  Divider(),
           Card(
             margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
             color: Colors.transparent,
@@ -229,6 +235,80 @@ class _DrawState extends State<Draw> {
                     builder: (context) => Todo(),
                   ),
                   (_) => false,
+                );
+              },
+            ),
+          ),
+          Spacer(),
+          Card(
+            margin: EdgeInsets.fromLTRB(0, 0, 40, 2),
+            color: Colors.transparent,
+            clipBehavior: Clip.antiAlias,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.horizontal(
+                right: Radius.circular(100),
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (cxt) {
+                    return AlertDialog(
+                      buttonPadding: EdgeInsets.zero,
+                      actionsPadding: EdgeInsets.only(right: 10, bottom: 15),
+                      title: Text('Logout'),
+                      content: SingleChildScrollView(
+                        child: ListBody(
+                          children: [
+                            Text('Are you sure?'),
+                          ],
+                        ),
+                      ),
+                      actions: [
+                        FlatButton(
+                          padding: EdgeInsets.only(right: 6),
+                          splashColor: Colors.transparent,
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: colors[7],
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pop(cxt);
+                          },
+                        ),
+                        FlatButton(
+                          onPressed: () {
+                            Navigator.pop(cxt);
+                            Provider.of<Auth>(context, listen: false).logout();
+                            Provider.of<DataAllClasses>(context, listen: false)
+                                .logOut();
+                          },
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                          ),
+                          child: Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          color: Colors.redAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -281,4 +361,95 @@ tileNoti(context, int index) {
       ),
     ),
   );
+}
+
+class EditPro extends StatefulWidget {
+  @override
+  _EditProState createState() => _EditProState();
+}
+
+class _EditProState extends State<EditPro> {
+  File pickedImg;
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        iconTheme: IconThemeData(color: colors[5]),
+      ),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Stack(
+            alignment: AlignmentDirectional.bottomEnd,
+            children: [
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.white,
+                backgroundImage: pickedImg == null
+                    ? Provider.of<Auth>(context).data[0][3] == null
+                        ? AssetImage(resourceHelper[2])
+                        : NetworkImage(
+                            '${Provider.of<Auth>(context).data[0][3]}')
+                    : FileImage(pickedImg),
+              ),
+              GestureDetector(
+                onTap: () async {
+                  FocusScope.of(context).requestFocus(FocusNode());
+                  FilePickerResult result = await FilePicker.platform
+                      .pickFiles(type: FileType.image, allowCompression: true)
+                      .timeout(Duration(minutes: 1), onTimeout: () {
+                    Fluttertoast.showToast(
+                        msg: 'Unable to prepare the selected Image');
+                    return;
+                  });
+                  if (result == null) return;
+                  if (mounted)
+                    setState(() {
+                      pickedImg = File(result.files.single.path);
+                    });
+                },
+                child: CircleAvatar(
+                  maxRadius: 18,
+                  backgroundColor: Colors.grey[300],
+                  child: Icon(
+                    Icons.edit,
+                    size: 20,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${Provider.of<Auth>(context).data[0][0]}',
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Text(
+              '${Provider.of<Auth>(context).data[0][1]}',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          Text(
+            Provider.of<Auth>(context).data[0][2] ? 'Student' : 'Teacher',
+            style: TextStyle(),
+          ),
+        ],
+      ),
+    );
+  }
 }

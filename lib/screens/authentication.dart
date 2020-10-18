@@ -164,7 +164,7 @@ class _SignUpState extends State<SignUp> {
                       onTap: () async {
                         final pickedImageFile = await ImagePicker.pickImage(
                           source: ImageSource.gallery,
-                          imageQuality: 50,
+                          imageQuality: 60,
                           maxWidth: 150,
                         );
                         setState(() {

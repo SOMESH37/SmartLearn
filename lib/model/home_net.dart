@@ -16,10 +16,64 @@ class DataAllClasses extends ChangeNotifier {
   List mytodo = [];
   List assign = [];
   List ans = [];
+  List ans1 = [];
+  List filterL = [];
   List mydis = [];
+  List allgrd = [];
   List grades = [];
   List notifications = [];
   bool newNoti = false;
+  logOut() {
+    myclasses.clear();
+    mytodo.clear();
+    filterL.clear();
+    notifications.clear();
+    newNoti = false;
+    notifyListeners();
+  }
+
+  filter(int chipIndex) {
+    if (ans.isNotEmpty || ans1.isNotEmpty) {
+      switch (chipIndex) {
+        case 1:
+          filterL.clear();
+          filterL = ans.toList();
+          break;
+        case 2:
+          filterL.clear();
+          filterL = ans1.toList();
+          break;
+        case 3:
+          filterL.clear();
+          filterL = ans.toList();
+          filterL.addAll(ans1.toList());
+          break;
+        case 4:
+          filterL.clear();
+          filterL = ans.where((element) => element[4]).toList();
+          break;
+        case 5:
+          filterL.clear();
+          filterL = ans.where((element) => !element[4]).toList();
+          break;
+        case 6:
+          filterL.clear();
+          filterL = ans.where((element) => !element[5]).toList();
+          break;
+        case 7:
+          filterL.clear();
+          filterL = ans.where((element) => element[5]).toList();
+          break;
+      }
+      if (chipIndex == 7)
+        filterL.sort((a, b) => b[3].compareTo(a[3]));
+      else
+        filterL.sort((a, b) =>
+            a.toString().toLowerCase().compareTo(b.toString().toLowerCase()));
+      notifyListeners();
+    }
+  }
+
   Future updateClass(BuildContext context) async {
     try {
       var response = await http.get(
@@ -91,6 +145,28 @@ class DataAllClasses extends ChangeNotifier {
     }
   }
 
+  Future<int> deleteClass(BuildContext context, int classID) async {
+    try {
+      var response = await http.delete(
+        kurl + '/class/classroom/$classID/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      if (response.statusCode == 204) {
+        final res = await updateClass(context);
+        if (res == 200) return res;
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
   Future joinClass(BuildContext context, String code) async {
     try {
       var response = await http.post(
@@ -127,7 +203,7 @@ class DataAllClasses extends ChangeNotifier {
     }
   }
 
-  Future updateAssign(BuildContext context, classID) async {
+  Future<int> updateAssign(BuildContext context, classID) async {
     try {
       var response = await http.get(
         kurl + '/class/classroom/$classID/assignment/',
@@ -143,7 +219,7 @@ class DataAllClasses extends ChangeNotifier {
         final responseData = json.decode(response.body);
         if (responseData == null) {
           print('no assignments');
-          return;
+          return 0;
         }
         assign.clear();
         responseData.forEach((assignNum) {
@@ -169,46 +245,46 @@ class DataAllClasses extends ChangeNotifier {
   Future<int> createAssign(BuildContext context, int classID, title, des, time,
       maxMarks, File file) async {
     try {
-      String fileName = basename(file.path);
-      final mimeTypeData = lookupMimeType(file.path).split("/");
-      FormData formData = FormData.fromMap({
-        "title": "$title",
-        "description": "$des",
-        "submit_by": "$time",
-        "max_marks": "$maxMarks",
-        "file_linked": await MultipartFile.fromFile(file.path,
-            filename: fileName,
-            contentType: MediaType(mimeTypeData[0], mimeTypeData[1])),
-      });
-      final response = await Dio().post(
-        kurl + '/class/classroom/$classID/assignment/',
-        data: formData,
-        options: Options(
+      var response;
+      if (file != null) {
+        String fileName = basename(file.path);
+        final mimeTypeData = lookupMimeType(file.path).split("/");
+        FormData formData = FormData.fromMap({
+          "title": "$title",
+          "description": "$des",
+          "submit_by": "$time",
+          "max_marks": "$maxMarks",
+          "file_linked": await MultipartFile.fromFile(file.path,
+              filename: fileName,
+              contentType: MediaType(mimeTypeData[0], mimeTypeData[1])),
+        });
+        response = await Dio().post(
+          kurl + '/class/classroom/$classID/assignment/',
+          data: formData,
+          options: Options(
+            headers: {
+              'Authorization':
+                  'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+            },
+          ),
+        );
+      } else {
+        response = await http.post(
+          kurl + '/class/classroom/$classID/assignment/',
           headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
             'Authorization':
                 'Bearer ${Provider.of<Auth>(context, listen: false).token}',
           },
-        ),
-      );
-
-      // var response = await http.post(
-      //   kurl + '/class/classroom/$classID/assignment/',
-      //   headers: {
-      //     'Accept': 'application/json',
-      //     'Content-Type': 'application/json',
-      //     'Authorization':
-      //         'Bearer ${Provider.of<Auth>(context, listen: false).token}',
-      //   },
-      //   body: json.encode(
-      //     {
-      //       "title": "$title",
-      //       "description": "$des",
-      //       "submit_by": "$time",
-      //       "max_marks": "$maxMarks",
-      //       "file_linked": file == null ? null : file,
-      //     },
-      //   ),
-      // );
+          body: json.encode(
+            {
+              "title": "$title",
+              "description": "$des",
+            },
+          ),
+        );
+      }
 
       print(response.statusCode);
       if (response.statusCode == 201) {
@@ -225,7 +301,28 @@ class DataAllClasses extends ChangeNotifier {
     }
   }
 
-  Future viewAllAss(BuildContext context, classID, assID) async {
+  Future<int> deleteAssign(BuildContext context, int classID, int assID) async {
+    try {
+      var response = await http.delete(
+        kurl + '/class/classroom/$classID/assignment/$assID/',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization':
+              'Bearer ${Provider.of<Auth>(context, listen: false).token}',
+        },
+      );
+      print(response.statusCode);
+      if (response.statusCode == 200) {
+        return updateAssign(context, classID);
+      }
+      return response.statusCode;
+    } catch (error) {
+      print(error);
+      return -1;
+    }
+  }
+
+  Future viewAllAss(BuildContext context, classID, assID, chipIndex) async {
     try {
       var response = await http.get(
         kurl + '/class/classroom/$classID/assignment/$assID/answers/',
@@ -244,18 +341,26 @@ class DataAllClasses extends ChangeNotifier {
           return;
         }
         ans.clear();
-        responseData.forEach((ansNum) {
+        responseData["answers"].forEach((ansNum) {
           ans.add([
-            ansNum["id"],
+            ansNum["student"]["name"],
+            ansNum["student"]["picture"],
             ansNum["file_linked"],
             ansNum["marks_scored"],
             ansNum["late_submitted"],
             ansNum["checked"],
-            ansNum["student"]["name"],
-            ansNum["student"]["picture"],
+            ansNum["id"],
           ]);
         });
-
+        ans1.clear();
+        responseData["not_submitted"].forEach((ansNum) {
+          ans1.add([
+            ansNum["name"],
+            ansNum["picture"],
+            ansNum["id"],
+          ]);
+        });
+        filter(chipIndex);
         notifyListeners();
       }
       return response.statusCode;
@@ -266,7 +371,7 @@ class DataAllClasses extends ChangeNotifier {
   }
 
   Future<int> updateMarks(
-      BuildContext context, marks, classID, assID, ansID) async {
+      BuildContext context, marks, classID, assID, ansID, chipIndex) async {
     try {
       var response = await http.put(
         kurl + '/class/classroom/$classID/assignment/$assID/answer/$ansID/',
@@ -285,7 +390,7 @@ class DataAllClasses extends ChangeNotifier {
       print(response.statusCode);
       print(response.body);
       if (response.statusCode == 200) {
-        viewAllAss(context, classID, assID);
+        viewAllAss(context, classID, assID, chipIndex);
       }
       return response.statusCode;
     } catch (error) {
@@ -424,7 +529,6 @@ class DataAllClasses extends ChangeNotifier {
           responseData["description"],
         ]);
         notifyListeners();
-        print(mytodo);
       }
       return response.statusCode;
     } catch (error) {
@@ -561,15 +665,17 @@ class DataAllClasses extends ChangeNotifier {
           print('no students');
           return;
         }
-        grades.clear();
+        allgrd.clear();
         responseData.forEach((grdNum) {
-          grades.add([
+          allgrd.add([
             grdNum["student"]["name"],
             grdNum["percentage"],
             grdNum["student"]["picture"],
+            grdNum["student"]["id"],
           ]);
         });
-        grades.sort((a, b) => a.toString().compareTo(b.toString()));
+        allgrd.sort((a, b) =>
+            a.toString().toLowerCase().compareTo(b.toString().toLowerCase()));
         notifyListeners();
       }
       return response.statusCode;
@@ -579,10 +685,10 @@ class DataAllClasses extends ChangeNotifier {
     }
   }
 
-  Future grade(BuildContext context, int classID) async {
+  Future grade(BuildContext context, int classID, int stdID) async {
     try {
       var response = await http.get(
-        kurl + '/class/classroom/$classID/portal/',
+        kurl + '/class/classroom/$classID/portal/$stdID/',
         headers: {
           'Accept': 'application/json',
           'Authorization':
@@ -609,7 +715,6 @@ class DataAllClasses extends ChangeNotifier {
             grdNum["due_date"],
           ]);
         });
-        print(grades);
         notifyListeners();
       }
       return response.statusCode;

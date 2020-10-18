@@ -1,9 +1,7 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'dart:ui';
 import '../helper.dart';
 import 'package:provider/provider.dart';
 import '../model/home_net.dart';
@@ -66,7 +64,7 @@ class _HomeState extends State<Home> {
       home: Scaffold(
         drawer: Draw(),
         appBar: AppBar(
-          elevation: 1,
+          elevation: 0,
           iconTheme: IconThemeData(
             color: colors[5],
           ),
@@ -87,11 +85,11 @@ class _HomeState extends State<Home> {
                   IconButton(
                     icon: Provider.of<DataAllClasses>(context).newNoti
                         ? Icon(
-                            Icons.notifications_active_rounded,
+                            Icons.history_rounded,
                             color: Colors.red[400],
                           )
                         : Icon(
-                            Icons.notifications_none,
+                            Icons.history_rounded,
                             color: Colors.grey,
                           ),
                     onPressed: () {
@@ -119,13 +117,17 @@ class _HomeState extends State<Home> {
             ),
           ],
         ),
+        backgroundColor: colors[6],
         body: Column(
           children: [
             isLoadd
                 ? LinearProgressIndicator(
                     minHeight: 3,
                   )
-                : SizedBox(
+                : Container(
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                    ),
                     height: 3,
                   ),
             Provider.of<DataAllClasses>(context).myclasses.isEmpty
@@ -164,7 +166,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                   )
-                : Expanded(child: ClassColumn())
+                : Expanded(child: ClassColumn()),
           ],
         ),
         floatingActionButton: FloatingActionButton(
@@ -194,114 +196,202 @@ class ClassColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () async {
-        Provider.of<DataAllClasses>(context, listen: false)
+        await Provider.of<DataAllClasses>(context, listen: false)
             .updateClass(context);
       },
-      child: ListView.builder(
-        // physics: BouncingScrollPhysics(),
-        padding: EdgeInsets.only(top: 9),
-        itemCount: Provider.of<DataAllClasses>(context).myclasses.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              elevation: 0,
-              color: colors[index % 5][0],
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: colors[index % 5][1],
-                  width: 4,
-                ),
-                borderRadius: BorderRadius.circular(20),
+      child: ScrollConfiguration(
+        behavior: ScrollBehavior()
+          ..buildViewportChrome(context, null, AxisDirection.down),
+        child: ListView.builder(
+          itemCount: Provider.of<DataAllClasses>(context).myclasses.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
               ),
-              child: Stack(
-                alignment: AlignmentDirectional.bottomCenter,
-                children: [
-                  Image.asset(
-                    resourceHelper[index % 3 + 3],
-                    width: 200,
-                    color: Colors.white38,
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                elevation: 0,
+                color: colors[index % 5][0],
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: colors[index % 5][1],
+                    width: 4,
                   ),
-                  Container(
-                    constraints: BoxConstraints(
-                      minHeight: 150,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Stack(
+                  alignment: AlignmentDirectional.bottomCenter,
+                  children: [
+                    Image.asset(
+                      resourceHelper[index % 3 + 3],
+                      width: 200,
+                      color: Colors.white38,
                     ),
-                    child: ListTile(
-                      enabled: true,
-                      contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => MyClass(
-                                Provider.of<DataAllClasses>(context)
-                                    .myclasses[index][0],
-                                colors[index % 5][0],
-                                Provider.of<DataAllClasses>(context)
-                                    .myclasses[index][5],
-                                index),
+                    Container(
+                      constraints: BoxConstraints(
+                        minHeight: 150,
+                      ),
+                      child: ListTile(
+                        onLongPress: isStd
+                            ? null
+                            : () {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: true,
+                                  builder: (cxt) {
+                                    return AlertDialog(
+                                      buttonPadding: EdgeInsets.zero,
+                                      actionsPadding: EdgeInsets.only(
+                                          right: 20, bottom: 15),
+                                      title: Text('Make your choice'),
+                                      content: SingleChildScrollView(
+                                        child: Text(
+                                            'Do you want to delete the class?'),
+                                      ),
+                                      actions: [
+                                        FlatButton(
+                                          padding: EdgeInsets.only(right: 20),
+                                          splashColor: Colors.transparent,
+                                          child: Text(
+                                            'Cancel',
+                                            style: TextStyle(
+                                              color: colors[7],
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            Navigator.pop(cxt);
+                                          },
+                                        ),
+                                        FlatButton(
+                                          onPressed: () async {
+                                            Navigator.of(cxt).pop();
+                                            Fluttertoast.showToast(
+                                              msg:
+                                                  'Your request has been sent!',
+                                            );
+                                            int res = await Provider.of<
+                                                        DataAllClasses>(context,
+                                                    listen: false)
+                                                .deleteClass(
+                                                    context,
+                                                    Provider.of<DataAllClasses>(
+                                                            context,
+                                                            listen: false)
+                                                        .myclasses[index][5]);
+                                            if (res == 200)
+                                              Fluttertoast.showToast(
+                                                msg: 'Class Deleted!',
+                                              );
+                                            else if (res == 204) {
+                                              Provider.of<DataAllClasses>(
+                                                      context,
+                                                      listen: false)
+                                                  .updateClass(context);
+                                              Fluttertoast.showToast(
+                                                msg: 'Class Deleted!',
+                                              );
+                                            } else
+                                              Fluttertoast.showToast(
+                                                msg:
+                                                    'Sorry, can\'t establish a connection.',
+                                              );
+                                          },
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: 20,
+                                          ),
+                                          child: Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          color: Colors.redAccent,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(100),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                        enabled: true,
+                        contentPadding: EdgeInsets.fromLTRB(20, 15, 20, 55),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => MyClass(
+                                  Provider.of<DataAllClasses>(context)
+                                      .myclasses[index][0],
+                                  colors[index % 5][0],
+                                  Provider.of<DataAllClasses>(context)
+                                      .myclasses[index][5],
+                                  index,
+                                  colors[index % 5][1]),
+                            ),
+                          );
+                        },
+                        title: Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: 6,
                           ),
-                        );
-                      },
-                      title: Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: 6,
+                          child: Text(
+                            '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
+                            style: TextStyle(
+                              color: colors[6],
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        child: Text(
-                          '${Provider.of<DataAllClasses>(context).myclasses[index][0]}',
+                        subtitle: Text(
+                          '${Provider.of<DataAllClasses>(context).myclasses[index][1]}',
                           style: TextStyle(
                             color: colors[6],
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
-                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
                         ),
-                      ),
-                      subtitle: Text(
-                        '${Provider.of<DataAllClasses>(context).myclasses[index][1]}',
-                        style: TextStyle(
-                          color: colors[6],
-                          fontSize: 13,
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.white,
+                              backgroundImage: Provider.of<DataAllClasses>(
+                                              context)
+                                          .myclasses[index][3] ==
+                                      null
+                                  ? AssetImage(resourceHelper[2])
+                                  : NetworkImage(
+                                      '${Provider.of<DataAllClasses>(context).myclasses[index][3]}'),
+                            ),
+                            // Text(
+                            //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
+                            //   style: TextStyle(
+                            //     color: colors[6],
+                            //     fontSize: 12,
+                            //   ),
+                            //   overflow: TextOverflow.ellipsis,
+                            //   maxLines: null,
+                            // ),
+                          ],
                         ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 2,
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Colors.white,
-                            backgroundImage: Provider.of<DataAllClasses>(
-                                            context)
-                                        .myclasses[index][3] ==
-                                    null
-                                ? AssetImage(resourceHelper[2])
-                                : NetworkImage(
-                                    '${Provider.of<DataAllClasses>(context).myclasses[index][3]}'),
-                          ),
-                          // Text(
-                          //   '${Provider.of<DataAllClasses>(context).myclasses[index][2]}',
-                          //   style: TextStyle(
-                          //     color: colors[6],
-                          //     fontSize: 12,
-                          //   ),
-                          //   overflow: TextOverflow.ellipsis,
-                          //   maxLines: null,
-                          // ),
-                        ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -309,9 +399,9 @@ class ClassColumn extends StatelessWidget {
 
 class MyClass extends StatefulWidget {
   final String mytitle;
-  final Color colour;
+  final Color colour, col;
   final int classID, index;
-  MyClass(this.mytitle, this.colour, this.classID, this.index);
+  MyClass(this.mytitle, this.colour, this.classID, this.index, this.col);
 
   @override
   _MyClassState createState() => _MyClassState();
@@ -325,6 +415,7 @@ class _MyClassState extends State<MyClass> {
     Provider.of<DataAllClasses>(context, listen: false).assign.clear();
     Provider.of<DataAllClasses>(context, listen: false).mydis.clear();
     Provider.of<DataAllClasses>(context, listen: false).grades.clear();
+    Provider.of<DataAllClasses>(context, listen: false).allgrd.clear();
     Future.delayed(Duration.zero, () async {
       rep2 = await Provider.of<DataAllClasses>(context, listen: false)
           .updateDiscuss(context, widget.classID);
@@ -332,10 +423,11 @@ class _MyClassState extends State<MyClass> {
           .updateAssign(context, widget.classID);
       if (isStd)
         rep3 = await Provider.of<DataAllClasses>(context, listen: false)
-            .grade(context, widget.classID);
+            .grade(context, widget.classID, 0);
       else
         rep3 = await Provider.of<DataAllClasses>(context, listen: false)
             .allGrades(context, widget.classID);
+      Provider.of<DataAllClasses>(context, listen: false).updateClass(context);
     });
     super.initState();
   }
@@ -367,107 +459,170 @@ class _MyClassState extends State<MyClass> {
             //     bottom: Radius.circular(50),
             //   ),
             // ),
-            title: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: 10,
-                  ),
-                  child: Text(
-                    widget.mytitle,
-                    style: TextStyle(),
-                  ),
+            automaticallyImplyLeading: false,
+            title: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 5, 12, 0),
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 5),
+                decoration: BoxDecoration(
+                  color: widget.col,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.arrow_back_ios_rounded),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          Expanded(
+                            child: Text(
+                              widget.mytitle,
+                              style: TextStyle(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(right: 2),
+                      child: isL
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.7,
+                                  backgroundColor: Colors.transparent,
+                                  valueColor: AlwaysStoppedAnimation(colors[6]),
+                                ),
+                              ),
+                            )
+                          : Row(
+                              children: [
+                                // IconButton(
+                                //   icon: Icon(Icons.bubble_chart),
+                                //   onPressed: () {
+                                //     Fluttertoast.showToast(
+                                //         msg:
+                                //             'Private Chat will open from here!');
+                                //   },
+                                //   splashRadius: 1,
+                                // ),
+                                IconButton(
+                                  splashRadius: 1,
+                                  icon: Icon(Icons.info_outline),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      barrierDismissible: true,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15)),
+                                          buttonPadding: EdgeInsets.all(15),
+                                          content: Wrap(
+                                            children: [
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                    .only(
+                                                                right: 10),
+                                                        child: CircleAvatar(
+                                                          radius: 20,
+                                                          backgroundColor:
+                                                              Colors.white,
+                                                          backgroundImage: Provider.of<DataAllClasses>(context)
+                                                                              .myclasses[
+                                                                          widget
+                                                                              .index]
+                                                                      [3] ==
+                                                                  null
+                                                              ? AssetImage(
+                                                                  resourceHelper[
+                                                                      2])
+                                                              : NetworkImage(
+                                                                  '${Provider.of<DataAllClasses>(context).myclasses[widget.index][3]}'),
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                          '${Provider.of<DataAllClasses>(context).myclasses[widget.index][2]}'),
+                                                    ],
+                                                  ),
+                                                  Padding(
+                                                    padding: const EdgeInsets
+                                                            .symmetric(
+                                                        vertical: 13),
+                                                    child: SelectableText(
+                                                      '${Provider.of<DataAllClasses>(context).myclasses[widget.index][4]}',
+                                                      onTap: () async {
+                                                        Clipboard.setData(
+                                                          ClipboardData(
+                                                              text: Provider.of<
+                                                                              DataAllClasses>(
+                                                                          context,
+                                                                          listen:
+                                                                              false)
+                                                                      .myclasses[
+                                                                  widget
+                                                                      .index][4]),
+                                                        );
+                                                        var s = await Clipboard
+                                                            .getData(Clipboard
+                                                                .kTextPlain);
+                                                        if (Provider.of<DataAllClasses>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .myclasses[widget.index]
+                                                                [4] ==
+                                                            s.text)
+                                                          Fluttertoast.showToast(
+                                                              msg:
+                                                                  '${s.text} copied!');
+                                                      },
+                                                      style: TextStyle(
+                                                        color: Colors.blue,
+                                                        fontSize: 50,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                      'Total students: ${Provider.of<DataAllClasses>(context).myclasses[widget.index][6]}'),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             backgroundColor: widget.colour,
             elevation: 6,
-            leadingWidth: 50,
             titleSpacing: 0,
             toolbarHeight: 120,
-            actions: [
-              Padding(
-                padding: EdgeInsets.only(right: 35),
-                child: isL
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.7,
-                            backgroundColor: Colors.transparent,
-                            valueColor: AlwaysStoppedAnimation(colors[6]),
-                          ),
-                        ),
-                      )
-                    : IconButton(
-                        icon: Icon(Icons.info_outline),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            barrierDismissible: true,
-                            builder: (context) {
-                              return AlertDialog(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15)),
-                                buttonPadding: EdgeInsets.all(15),
-                                content: Wrap(
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  right: 10),
-                                              child: CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor: Colors.white,
-                                                backgroundImage: Provider.of<
-                                                                        DataAllClasses>(
-                                                                    context)
-                                                                .myclasses[
-                                                            widget.index][3] ==
-                                                        null
-                                                    ? AssetImage(
-                                                        resourceHelper[2])
-                                                    : NetworkImage(
-                                                        '${Provider.of<DataAllClasses>(context).myclasses[widget.index][3]}'),
-                                              ),
-                                            ),
-                                            Text(
-                                                '${Provider.of<DataAllClasses>(context).myclasses[widget.index][2]}'),
-                                          ],
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              vertical: 13),
-                                          child: Text(
-                                            '${Provider.of<DataAllClasses>(context).myclasses[widget.index][4]}',
-                                            style: TextStyle(
-                                              color: Colors.blue,
-                                              fontSize: 50,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                            'Total students: ${Provider.of<DataAllClasses>(context).myclasses[widget.index][6]}'),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        },
-                        color: Colors.white,
-                      ),
-              ),
-            ],
+            actions: [],
             bottom: TabBar(
               indicatorColor: colors[6],
               indicatorWeight: 3,
@@ -513,7 +668,7 @@ class _MyClassState extends State<MyClass> {
                       ),
                     )
                   : isStd
-                      ? Grades(widget.colour, widget.classID)
+                      ? Grades(widget.colour, widget.classID, 'nothing')
                       : AllGrades(widget.colour, widget.classID),
             ],
           ),
@@ -540,7 +695,7 @@ class Discuss extends StatelessWidget {
             : RefreshIndicator(
                 color: col,
                 onRefresh: () async {
-                  Provider.of<DataAllClasses>(context, listen: false)
+                  await Provider.of<DataAllClasses>(context, listen: false)
                       .updateDiscuss(context, classID);
                 },
                 child: ListView.builder(
@@ -685,7 +840,13 @@ tileDiscuss(context, int index, int classID) {
         ),
       ),
       child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+            topLeft: Radius.circular(20),
+          ),
+        ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 12,
@@ -697,17 +858,31 @@ tileDiscuss(context, int index, int classID) {
                   barrierDismissible: true,
                   builder: (cxt) {
                     return AlertDialog(
-                      buttonPadding: EdgeInsets.all(15),
+                      buttonPadding: EdgeInsets.zero,
+                      actionsPadding: EdgeInsets.only(right: 20, bottom: 15),
                       title: Text('Make your choice'),
                       content: SingleChildScrollView(
                         child: Text('Do you want to delete your chat?'),
                       ),
                       actions: [
                         FlatButton(
+                          padding: EdgeInsets.only(right: 20),
+                          splashColor: Colors.transparent,
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: colors[7],
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(cxt);
+                          },
+                        ),
+                        FlatButton(
                           onPressed: () async {
                             Navigator.of(cxt).pop();
                             Fluttertoast.showToast(
-                              msg: 'Your request has been send!',
+                              msg: 'Your request has been sent!',
                             );
                             int res = await Provider.of<DataAllClasses>(context,
                                     listen: false)
@@ -731,7 +906,7 @@ tileDiscuss(context, int index, int classID) {
                               );
                           },
                           padding: EdgeInsets.symmetric(
-                            horizontal: 30,
+                            horizontal: 20,
                           ),
                           child: Text(
                             'Delete',
@@ -740,7 +915,7 @@ tileDiscuss(context, int index, int classID) {
                               fontSize: 12,
                             ),
                           ),
-                          color: Colors.blue,
+                          color: Colors.redAccent,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(100),
                           ),
@@ -842,7 +1017,7 @@ class _WorkState extends State<Work> {
             )
           : RefreshIndicator(
               onRefresh: () async {
-                Provider.of<DataAllClasses>(context, listen: false)
+                await Provider.of<DataAllClasses>(context, listen: false)
                     .updateAssign(context, widget.classID);
               },
               color: widget.col,
@@ -884,93 +1059,116 @@ class AllGrades extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Provider.of<DataAllClasses>(context).grades.isEmpty
-          ? Center(
-              child: Image.asset(
-                resourceHelper[8],
-                width: 200,
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () async {
-                Provider.of<DataAllClasses>(context, listen: false)
-                    .allGrades(context, classID);
-              },
-              color: col,
-              child: ListView.builder(
+      body: RefreshIndicator(
+        color: col,
+        onRefresh: () async {
+          await Provider.of<DataAllClasses>(context, listen: false)
+              .allGrades(context, classID);
+        },
+        child: Provider.of<DataAllClasses>(context).allgrd.isEmpty
+            ? Center(
+                child: Image.asset(
+                  resourceHelper[8],
+                  width: 200,
+                ),
+              )
+            : ListView.builder(
                 // physics: BouncingScrollPhysics(),
                 padding: EdgeInsets.symmetric(vertical: 12),
-                itemCount: Provider.of<DataAllClasses>(context).grades.length,
+                itemCount: Provider.of<DataAllClasses>(context).allgrd.length,
                 itemBuilder: (context, index) {
                   return Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                    child: Stack(
-                      alignment: AlignmentDirectional.centerStart,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(left: 5),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: LinearProgressIndicator(
-                              // backgroundColor: Color(0xbf08BD80),
-                              // valueColor:
-                              //     AlwaysStoppedAnimation(Colors.greenAccent[300]),
-                              value: Provider.of<DataAllClasses>(context)
-                                      .grades[index][1] /
-                                  100,
-                              minHeight: 32,
-                            ),
+                    child: GestureDetector(
+                      onTap: () {
+                        Provider.of<DataAllClasses>(context, listen: false)
+                            .grades
+                            .clear();
+                        Provider.of<DataAllClasses>(context, listen: false)
+                            .grade(
+                                context,
+                                classID,
+                                Provider.of<DataAllClasses>(context,
+                                        listen: false)
+                                    .allgrd[index][3]);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Grades(
+                                col,
+                                classID,
+                                Provider.of<DataAllClasses>(context)
+                                    .allgrd[index][0]),
                           ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 25,
-                                    backgroundColor: Colors.white,
-                                    backgroundImage: Provider.of<
-                                                    DataAllClasses>(context)
-                                                .grades[index][2] ==
-                                            null
-                                        ? AssetImage(resourceHelper[2])
-                                        : NetworkImage(
-                                            '${Provider.of<DataAllClasses>(context).grades[index][2]}'),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6),
-                                      child: Text(
-                                        '${Provider.of<DataAllClasses>(context).grades[index][0]}',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.white,
-                                            fontSize: 18),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        );
+                      },
+                      child: Stack(
+                        alignment: AlignmentDirectional.centerStart,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 5),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: LinearProgressIndicator(
+                                // backgroundColor: Color(0xbf08BD80),
+                                // valueColor:
+                                //     AlwaysStoppedAnimation(Colors.greenAccent[300]),
+                                value: Provider.of<DataAllClasses>(context)
+                                        .allgrd[index][1] /
+                                    100,
+                                minHeight: 32,
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: Text(
-                                  '${Provider.of<DataAllClasses>(context).grades[index][1]}%'),
-                            ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundColor: Colors.white,
+                                      backgroundImage: Provider.of<
+                                                      DataAllClasses>(context)
+                                                  .allgrd[index][2] ==
+                                              null
+                                          ? AssetImage(resourceHelper[2])
+                                          : NetworkImage(
+                                              '${Provider.of<DataAllClasses>(context).allgrd[index][2]}'),
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6),
+                                        child: Text(
+                                          '${Provider.of<DataAllClasses>(context).allgrd[index][0]}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                              fontSize: 18),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: Text(
+                                    '${Provider.of<DataAllClasses>(context).allgrd[index][1]}%'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
               ),
-            ),
+      ),
     );
   }
 }
@@ -978,10 +1176,22 @@ class AllGrades extends StatelessWidget {
 class Grades extends StatelessWidget {
   final Color col;
   final int classID;
-  Grades(this.col, this.classID);
+  final String name;
+  Grades(this.col, this.classID, this.name);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: isStd
+          ? null
+          : AppBar(
+              backgroundColor: col,
+              title: Text(
+                name,
+                style: TextStyle(
+                  color: colors[6],
+                ),
+              ),
+            ),
       body: Provider.of<DataAllClasses>(context).grades.length < 2
           ? Center(
               child: Image.asset(
@@ -990,9 +1200,11 @@ class Grades extends StatelessWidget {
               ),
             )
           : RefreshIndicator(
+              color: col,
               onRefresh: () async {
-                Provider.of<DataAllClasses>(context, listen: false)
-                    .grade(context, classID);
+                if (isStd)
+                  await Provider.of<DataAllClasses>(context, listen: false)
+                      .grade(context, classID, 0);
               },
               child: Column(
                 children: [
@@ -1099,7 +1311,7 @@ class Grades extends StatelessWidget {
                                     !Provider.of<DataAllClasses>(context)
                                             .grades[index + 1][2]
                                         ? Text(
-                                            'Not sumitted',
+                                            'Not submitted',
                                             style: TextStyle(color: Colors.red),
                                           )
                                         : Provider.of<DataAllClasses>(context)
@@ -1153,7 +1365,7 @@ class Noti extends StatelessWidget {
           color: colors[5],
         ),
         title: Text(
-          'Notifications',
+          'Session history',
           style: TextStyle(
             color: colors[7],
           ),
@@ -1443,9 +1655,6 @@ joinBox(BuildContext context) async {
 }
 
 tileWork(context, int index, int classID) {
-  var diff = DateTime.now().difference(
-      DateTime.parse(Provider.of<DataAllClasses>(context).assign[index][3])
-          .subtract(Duration(minutes: 330)));
   return Container(
     constraints: BoxConstraints(
       minHeight: 124,
@@ -1463,23 +1672,104 @@ tileWork(context, int index, int classID) {
         ),
       ),
       child: ListTile(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        onLongPress: isStd
+            ? null
+            : () {
+                showDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (cxt) {
+                    return AlertDialog(
+                      buttonPadding: EdgeInsets.zero,
+                      actionsPadding: EdgeInsets.only(right: 20, bottom: 15),
+                      title: Text('Make your choice'),
+                      content: SingleChildScrollView(
+                        child: Text('Do you want to delete the assignment?'),
+                      ),
+                      actions: [
+                        FlatButton(
+                          padding: EdgeInsets.only(right: 20),
+                          splashColor: Colors.transparent,
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: colors[7],
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(cxt);
+                          },
+                        ),
+                        FlatButton(
+                          onPressed: () async {
+                            Navigator.of(cxt).pop();
+                            Fluttertoast.showToast(
+                              msg: 'Your request has been sent!',
+                            );
+
+                            int res = await Provider.of<DataAllClasses>(context,
+                                    listen: false)
+                                .deleteAssign(
+                                    context,
+                                    classID,
+                                    Provider.of<DataAllClasses>(context,
+                                            listen: false)
+                                        .assign[index][0]);
+                            if (res > -10) {
+                              if (res == 200)
+                                Fluttertoast.showToast(
+                                  msg: 'Assignment deleted!',
+                                );
+                              else
+                                Fluttertoast.showToast(
+                                  msg: 'Sorry, can\'t establish a connection.',
+                                );
+                            }
+                          },
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                          ),
+                          child: Text(
+                            'Delete',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                          color: Colors.redAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
         onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => isStd
-                  ? UploadWork(
-                      classID,
-                      index,
-                      (Provider.of<DataAllClasses>(context).assign[index][6] ==
-                                  null ||
-                              Provider.of<DataAllClasses>(context).assign[index]
-                                      [6] ==
-                                  false)
-                          ? false
-                          : true)
-                  : ViewWork(classID, index),
-            ),
-          );
+          if (Provider.of<DataAllClasses>(context, listen: false).assign[index]
+                  [5] !=
+              null)
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => isStd
+                    ? UploadWork(
+                        classID,
+                        index,
+                        (Provider.of<DataAllClasses>(context).assign[index]
+                                        [6] ==
+                                    null ||
+                                Provider.of<DataAllClasses>(context)
+                                        .assign[index][6] ==
+                                    false)
+                            ? false
+                            : true)
+                    : ViewWork(classID, index),
+              ),
+            );
         },
         contentPadding: EdgeInsets.symmetric(
           horizontal: 20,
@@ -1491,25 +1781,38 @@ tileWork(context, int index, int classID) {
             fontWeight: FontWeight.w500,
           ),
         ),
-        trailing: Icon(Icons.watch_later_rounded,
-            color: diff.inHours < -2
-                ? Color(0xff08bd80)
-                : diff.inSeconds <= 0 ? Colors.redAccent : Colors.transparent),
+        trailing: Provider.of<DataAllClasses>(context).assign[index][5] == null
+            ? null
+            : Icon(Icons.watch_later_rounded,
+                color: DateTime.now()
+                            .difference(
+                                DateTime.parse(Provider.of<DataAllClasses>(context).assign[index][3])
+                                    .subtract(Duration(minutes: 330)))
+                            .inHours <
+                        -2
+                    ? Color(0xff08bd80)
+                    : DateTime.now()
+                                .difference(DateTime.parse(
+                                        Provider.of<DataAllClasses>(context)
+                                            .assign[index][3])
+                                    .subtract(Duration(minutes: 330)))
+                                .inSeconds <=
+                            0
+                        ? Colors.redAccent
+                        : Colors.transparent),
         subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Divider(
               thickness: 1,
               height: 25,
             ),
-            Row(
-              //crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(formatDate(
+            Provider.of<DataAllClasses>(context).assign[index][5] != null
+                ? Text(formatDate(
                     DateTime.parse(
                         Provider.of<DataAllClasses>(context).assign[index][3]),
-                    [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy])),
-              ],
-            ),
+                    [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy]))
+                : Text(Provider.of<DataAllClasses>(context).assign[index][2]),
           ],
         ),
       ),
@@ -1531,44 +1834,74 @@ class _CreateWorkState extends State<CreateWork> {
   var title, des, now, maxMarks;
   DateTime date = DateTime.now().add(Duration(days: 1));
   TimeOfDay time = TimeOfDay(hour: 21, minute: 0);
-  bool isLoad = false;
+  bool isLoad = false, isNotice = false;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Create new assignment',
-          style: TextStyle(
+    return AbsorbPointer(
+      absorbing: isLoad,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Create new assignment',
+            style: TextStyle(
+              color: colors[7],
+            ),
+          ),
+          backgroundColor: colors[6],
+          iconTheme: IconThemeData(
             color: colors[7],
           ),
+          bottom: isLoad
+              ? PreferredSize(
+                  child: LinearProgressIndicator(minHeight: 3),
+                  preferredSize: Size(double.infinity, 3),
+                )
+              : PreferredSize(
+                  child: SizedBox(height: 3),
+                  preferredSize: Size(double.infinity, 3),
+                ),
         ),
-        backgroundColor: colors[6],
-        iconTheme: IconThemeData(
-          color: colors[7],
-        ),
-        bottom: isLoad
-            ? PreferredSize(
-                child: LinearProgressIndicator(minHeight: 3),
-                preferredSize: Size(double.infinity, 3),
-              )
-            : PreferredSize(
-                child: SizedBox(height: 3),
-                preferredSize: Size(double.infinity, 3),
-              ),
-      ),
-      body: SingleChildScrollView(
-        child: IgnorePointer(
-          ignoring: isLoad,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Column(
-              children: [
-                Container(
-                  child: Column(
+        body: SingleChildScrollView(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: 0.95 * gapH -
+                  (MediaQuery.of(context).orientation.index == 0
+                      ? AppBar().preferredSize.height
+                      : -0.2 /*0.15*/ * gapH),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 5, 20, 0),
+              child: Column(
+                children: [
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(top: 5),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Text(
+                          'Type:',
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      ToggleButtons(
+                        children: [
+                          Text('Work'),
+                          Text('Notice'),
+                        ],
+                        isSelected: [!isNotice, isNotice],
+                        onPressed: (index) {
+                          setState(() {
+                            isNotice = !isNotice;
+                          });
+                        },
+                        constraints: BoxConstraints(
+                            minWidth: (gapW / 2 - 22), minHeight: 35),
+                        borderRadius: BorderRadius.circular(10),
+                        splashColor: Colors.transparent,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 15),
                         child: Text(
                           'Details:',
                           style: TextStyle(
@@ -1576,7 +1909,7 @@ class _CreateWorkState extends State<CreateWork> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.only(top: 10, bottom: 20),
                         child: TextField(
                           textInputAction: TextInputAction.next,
                           onChanged: (value) {
@@ -1633,183 +1966,210 @@ class _CreateWorkState extends State<CreateWork> {
                           LengthLimitingTextInputFormatter(250),
                         ],
                       ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(0, 20, 0, 20),
-                              child: TextField(
-                                onChanged: (value) {
-                                  maxMarks = int.tryParse(value);
-                                },
-                                keyboardType: TextInputType.number,
-                                style: TextStyle(
-                                  color: colors[7],
-                                ),
-                                decoration: InputDecoration(
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 15),
-                                  border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10)),
-                                  labelText: 'Max marks',
-                                  labelStyle: TextStyle(
-                                    color: colors[7],
-                                  ),
-                                  hintText: '100',
-                                  hintStyle: TextStyle(
-                                    color: colors[5],
-                                  ),
-                                ),
-                                inputFormatters: [
-                                  LengthLimitingTextInputFormatter(4),
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp('[0-9]'))
-                                ],
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Align(
-                              child: Text(now != null
-                                  ? formatDate(now, [
-                                      h,
-                                      ':',
-                                      nn,
-                                      ' ',
-                                      am,
-                                      ' - ',
-                                      d,
-                                      '/',
-                                      M,
-                                      '/',
-                                      yy
-                                    ])
-                                  : ''),
-                            ),
-                          )
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FlatButton(
-                              splashColor: Colors.transparent,
-                              onPressed: () async {
-                                FocusScope.of(context)
-                                    .requestFocus(FocusNode());
-                                date = await showDatePicker(
-                                    context: context,
-                                    firstDate: DateTime.now(),
-                                    initialDate: date ?? DateTime.now(),
-                                    lastDate:
-                                        DateTime.now().add(Duration(days: 99)));
-                                if (date != null && time != null)
-                                  setState(() {
-                                    now = DateTime(date.year, date.month,
-                                        date.day, time.hour, time.minute);
-                                  });
-                              },
-                              child: Text(
-                                'Choose date',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: FlatButton(
-                              splashColor: Colors.transparent,
-                              onPressed: () async {
-                                FocusScope.of(context)
-                                    .requestFocus(FocusNode());
-                                time = await showTimePicker(
-                                  initialTime: time ?? TimeOfDay.now(),
-                                  context: context,
-                                );
-                                if (time != null && date != null)
-                                  setState(() {
-                                    now = DateTime(date.year, date.month,
-                                        date.day, time.hour, time.minute);
-                                  });
-                              },
-                              child: Text(
-                                'Choose time',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  margin: EdgeInsets.only(top: (gapH - 510)),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.only(bottom: 4),
-                        constraints: BoxConstraints(
-                          minWidth: double.infinity,
-                        ),
-                        child: FlatButton(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 10),
-                          onPressed: () async {
-                            FocusScope.of(context).requestFocus(FocusNode());
-                            FilePickerResult result = await FilePicker.platform
-                                .pickFiles(
-                                    type: FileType.custom,
-                                    allowedExtensions: [
-                                  'pdf'
-                                ]).timeout(Duration(minutes: 1), onTimeout: () {
-                              Fluttertoast.showToast(
-                                  msg: 'Unable to prepare the selected PDF');
-                              return;
-                            });
-                            if (result == null) return;
-                            if (mounted)
-                              setState(() {
-                                pickedPDF = File(result.files.single.path);
-                                pName = result.files.single.name;
-                                pSize = result.files.single.size;
-                              });
-                          },
-                          child: pName == null
-                              ? Text(
-                                  '+ Select a file',
-                                  style: TextStyle(color: Colors.blue),
-                                )
-                              : Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                      isNotice
+                          ? SizedBox.shrink()
+                          : Column(
+                              children: [
+                                Row(
                                   children: [
                                     Expanded(
-                                      child: Text(
-                                        '$pName',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            0, 20, 0, 20),
+                                        child: TextField(
+                                          onChanged: (value) {
+                                            maxMarks = int.tryParse(value);
+                                          },
+                                          keyboardType: TextInputType.number,
+                                          style: TextStyle(
+                                            color: colors[7],
+                                          ),
+                                          decoration: InputDecoration(
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 15),
+                                            border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            labelText: 'Max marks',
+                                            labelStyle: TextStyle(
+                                              color: colors[7],
+                                            ),
+                                            hintText: maxMarks != null
+                                                ? maxMarks.toString()
+                                                : '',
+                                            hintStyle: TextStyle(
+                                              color: colors[5],
+                                            ),
+                                          ),
+                                          inputFormatters: [
+                                            LengthLimitingTextInputFormatter(5),
+                                            FilteringTextInputFormatter.allow(
+                                                RegExp('[0-9]'))
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    Text(
-                                      '$pSize KB',
+                                    Expanded(
+                                      child: Align(
+                                        child: Text(now != null
+                                            ? formatDate(now, [
+                                                h,
+                                                ':',
+                                                nn,
+                                                ' ',
+                                                am,
+                                                ' - ',
+                                                d,
+                                                '/',
+                                                M,
+                                                '/',
+                                                yy
+                                              ])
+                                            : ''),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: FlatButton(
+                                        splashColor: Colors.transparent,
+                                        onPressed: () async {
+                                          FocusScope.of(context)
+                                              .requestFocus(FocusNode());
+                                          date = await showDatePicker(
+                                              context: context,
+                                              firstDate: DateTime.now(),
+                                              initialDate:
+                                                  date ?? DateTime.now(),
+                                              lastDate: DateTime.now()
+                                                  .add(Duration(days: 99)));
+                                          if (date != null && time != null)
+                                            setState(() {
+                                              now = DateTime(
+                                                  date.year,
+                                                  date.month,
+                                                  date.day,
+                                                  time.hour,
+                                                  time.minute);
+                                            });
+                                        },
+                                        child: Text(
+                                          'Choose date',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: FlatButton(
+                                        splashColor: Colors.transparent,
+                                        onPressed: () async {
+                                          FocusScope.of(context)
+                                              .requestFocus(FocusNode());
+                                          time = await showTimePicker(
+                                            initialTime:
+                                                time ?? TimeOfDay.now(),
+                                            context: context,
+                                          );
+                                          if (time != null && date != null)
+                                            setState(() {
+                                              now = DateTime(
+                                                  date.year,
+                                                  date.month,
+                                                  date.day,
+                                                  time.hour,
+                                                  time.minute);
+                                            });
+                                        },
+                                        child: Text(
+                                          'Choose time',
+                                          style: TextStyle(
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                          shape: pName == null
-                              ? RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100),
-                                  side: BorderSide(
-                                    color: Colors.blue,
-                                    width: 0.75,
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
+                              ],
+                            ),
+                    ],
+                  ),
+                  Spacer(),
+                  Column(
+                    children: [
+                      isNotice
+                          ? SizedBox.shrink()
+                          : Container(
+                              padding: EdgeInsets.only(bottom: 4),
+                              constraints: BoxConstraints(
+                                minWidth: double.infinity,
+                              ),
+                              child: FlatButton(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 10),
+                                onPressed: () async {
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
+                                  FilePickerResult result =
+                                      await FilePicker.platform.pickFiles(
+                                          type: FileType.custom,
+                                          allowedExtensions: [
+                                        'pdf'
+                                      ]).timeout(Duration(minutes: 1),
+                                          onTimeout: () {
+                                    Fluttertoast.showToast(
+                                        msg:
+                                            'Unable to prepare the selected PDF');
+                                    return;
+                                  });
+                                  if (result == null) return;
+                                  if (mounted)
+                                    setState(() {
+                                      pickedPDF =
+                                          File(result.files.single.path);
+                                      pName = result.files.single.name;
+                                      pSize = result.files.single.size;
+                                    });
+                                },
+                                child: pName == null
+                                    ? Text(
+                                        '+ Select a file',
+                                        style: TextStyle(color: Colors.blue),
+                                      )
+                                    : Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '$pName',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${pSize}KB',
+                                          ),
+                                        ],
+                                      ),
+                                shape: pName == null
+                                    ? RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(100),
+                                        side: BorderSide(
+                                          color: Colors.blue,
+                                          width: 0.75,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
                       Container(
                         constraints: BoxConstraints(
                           minWidth: double.infinity,
@@ -1818,36 +2178,69 @@ class _CreateWorkState extends State<CreateWork> {
                           padding: EdgeInsets.symmetric(
                               horizontal: 30, vertical: 10),
                           onPressed: () async {
-                            if (title == null ||
-                                des == null ||
-                                now == null ||
-                                maxMarks == null ||
-                                pickedPDF == null ||
-                                des.length < 1 ||
-                                title.length < 1) {
-                              HapticFeedback.mediumImpact();
-                              return;
-                            }
-                            FocusScope.of(context).requestFocus(FocusNode());
-                            setState(() {
-                              isLoad = true;
-                            });
-                            int res = await Provider.of<DataAllClasses>(context,
-                                    listen: false)
-                                .createAssign(context, widget.classID, title,
-                                    des, now, maxMarks, pickedPDF);
-                            if (res > -10 && mounted) {
+                            if (isNotice) {
+                              if (title == null ||
+                                  des == null ||
+                                  des.length < 1 ||
+                                  title.length < 1) {
+                                HapticFeedback.mediumImpact();
+                                return;
+                              }
+                              FocusScope.of(context).requestFocus(FocusNode());
                               setState(() {
-                                isLoad = false;
+                                isLoad = true;
                               });
-                              if (res == 201) {
-                                Navigator.pop(context);
-                              } else if (res == 400) {
-                                showMyDialog(context, true,
-                                    'Try changing time or title');
-                              } else
-                                showMyDialog(
-                                    context, true, 'Something went wrong');
+                              int res = await Provider.of<DataAllClasses>(
+                                      context,
+                                      listen: false)
+                                  .createAssign(context, widget.classID, title,
+                                      des, null, null, null);
+                              if (res > -10 && mounted) {
+                                setState(() {
+                                  isLoad = false;
+                                });
+                                if (res == 201) {
+                                  Navigator.pop(context);
+                                } else if (res == 400) {
+                                  showMyDialog(
+                                      context, true, 'Try changing title');
+                                } else
+                                  showMyDialog(
+                                      context, true, 'Something went wrong');
+                              }
+                            } else {
+                              if (title == null ||
+                                  des == null ||
+                                  now == null ||
+                                  maxMarks == null ||
+                                  pickedPDF == null ||
+                                  des.length < 1 ||
+                                  title.length < 1) {
+                                HapticFeedback.mediumImpact();
+                                return;
+                              }
+                              FocusScope.of(context).requestFocus(FocusNode());
+                              setState(() {
+                                isLoad = true;
+                              });
+                              int res = await Provider.of<DataAllClasses>(
+                                      context,
+                                      listen: false)
+                                  .createAssign(context, widget.classID, title,
+                                      des, now, maxMarks, pickedPDF);
+                              if (res > -10 && mounted) {
+                                setState(() {
+                                  isLoad = false;
+                                });
+                                if (res == 201) {
+                                  Navigator.pop(context);
+                                } else if (res == 400) {
+                                  showMyDialog(context, true,
+                                      'Try changing time or title');
+                                } else
+                                  showMyDialog(
+                                      context, true, 'Something went wrong');
+                              }
                             }
                           },
                           child: Text(
@@ -1864,8 +2257,8 @@ class _CreateWorkState extends State<CreateWork> {
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1887,18 +2280,21 @@ class _ViewWorkState extends State<ViewWork> {
   bool isLoad = true;
   @override
   void initState() {
+    super.initState();
     Provider.of<DataAllClasses>(context, listen: false).ans.clear();
+    Provider.of<DataAllClasses>(context, listen: false).ans1.clear();
     Future.delayed(Duration.zero, () async {
       res = await Provider.of<DataAllClasses>(context, listen: false)
           .viewAllAss(
               context,
               widget.classID,
               Provider.of<DataAllClasses>(context, listen: false)
-                  .assign[widget.idx][0]);
+                  .assign[widget.idx][0],
+              1);
     });
-    super.initState();
   }
 
+  int chipIndex = 1;
   @override
   Widget build(BuildContext context) {
     if (res > -10 && mounted) {
@@ -1931,120 +2327,140 @@ class _ViewWorkState extends State<ViewWork> {
                 preferredSize: Size(double.infinity, 3),
               ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 15, 20, 0),
-        child: ListView(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: AbsorbPointer(
+        absorbing: isLoad,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              await Provider.of<DataAllClasses>(context, listen: false)
+                  .viewAllAss(
+                      context,
+                      widget.classID,
+                      Provider.of<DataAllClasses>(context, listen: false)
+                          .assign[widget.idx][0],
+                      chipIndex);
+            },
+            child: ListView(
               children: [
-                Text(
-                  '${Provider.of<DataAllClasses>(context).assign[widget.idx][2]}',
-                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
-                ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  child: Text(
-                    'Due: ' +
-                        formatDate(
-                            DateTime.parse(Provider.of<DataAllClasses>(context)
-                                .assign[widget.idx][3]),
-                            [h, ':', nn, ' ', am, ' - ', d, '/', M, '/', yy]),
-                    style: TextStyle(
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-                Text(
-                  '${Provider.of<DataAllClasses>(context).assign[widget.idx][4]} Maximum marks',
-                  style: TextStyle(
-                    color: Colors.blue,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 25, bottom: 4),
-                  child: Text(
-                    'Attachment:',
-                    style: TextStyle(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 25),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.rectangle,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        width: 1,
-                        color: colors[5],
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.insert_drive_file_outlined,
-                              color: colors[5],
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 5),
-                              child: Text(
-                                Provider.of<DataAllClasses>(context)
-                                        .assign[widget.idx][5]
-                                        .toString()
-                                        .contains('assignment')
-                                    ? Provider.of<DataAllClasses>(context)
-                                        .assign[widget.idx][5]
-                                        .toString()
-                                        .substring(52)
-                                    : '',
-                                style: TextStyle(),
-                              ),
-                            ),
-                          ],
-                        ),
-                        FlatButton(
-                          padding: EdgeInsets.zero,
-                          minWidth: 0,
-                          splashColor: Colors.transparent,
-                          onPressed: () {
-                            pdfView(
-                                context,
-                                Provider.of<DataAllClasses>(context,
-                                        listen: false)
-                                    .assign[widget.idx][5]);
-                          },
-                          child: Text(
-                            'View',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 5, right: 5),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  padding: const EdgeInsets.only(top: 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Student name',
+                        '${Provider.of<DataAllClasses>(context).assign[widget.idx][2]}',
                         style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
+                            fontSize: 19, fontWeight: FontWeight.w500),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        child: Text(
+                          'Due: ' +
+                              formatDate(
+                                  DateTime.parse(
+                                      Provider.of<DataAllClasses>(context)
+                                          .assign[widget.idx][3]),
+                                  [
+                                    h,
+                                    ':',
+                                    nn,
+                                    ' ',
+                                    am,
+                                    ' - ',
+                                    d,
+                                    '/',
+                                    M,
+                                    '/',
+                                    yy
+                                  ]),
+                          style: TextStyle(
+                            color: Colors.blue,
+                          ),
                         ),
                       ),
                       Text(
-                        'Status',
+                        '${Provider.of<DataAllClasses>(context).assign[widget.idx][4]} Maximum marks',
+                        style: TextStyle(
+                          color: Colors.blue,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 25, bottom: 4),
+                        child: Text(
+                          'Attachment:',
+                          style: TextStyle(),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.rectangle,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              width: 1,
+                              color: colors[5],
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.insert_drive_file_outlined,
+                                    color: colors[5],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 5),
+                                    child: Text(
+                                      Provider.of<DataAllClasses>(context)
+                                              .assign[widget.idx][5]
+                                              .toString()
+                                              .contains('assignment')
+                                          ? Provider.of<DataAllClasses>(context)
+                                              .assign[widget.idx][5]
+                                              .toString()
+                                              .substring(60)
+                                          : '',
+                                      style: TextStyle(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              FlatButton(
+                                padding: EdgeInsets.zero,
+                                minWidth: 0,
+                                splashColor: Colors.transparent,
+                                onPressed: () {
+                                  pdfView(
+                                      context,
+                                      Provider.of<DataAllClasses>(context,
+                                              listen: false)
+                                          .assign[widget.idx][5]);
+                                },
+                                child: Text(
+                                  'View',
+                                  style: TextStyle(color: Colors.blue),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filter',
                         style: TextStyle(
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
@@ -2052,47 +2468,309 @@ class _ViewWorkState extends State<ViewWork> {
                       ),
                     ],
                   ),
-                  Divider(
-                    height: 25,
-                    thickness: 1.7,
-                  ),
-                ],
-              ),
-            ),
-            isLoad || Provider.of<DataAllClasses>(context).ans.length < 1
-                ? Container(
-                    constraints: BoxConstraints(minHeight: gapH * 0.45),
-                    width: double.infinity,
-                    child: Center(
-                      child: Image.asset(
-                        resourceHelper[8],
-                        width: 200,
-                      ),
+                ),
+                SingleChildScrollView(
+                  physics: BouncingScrollPhysics(),
+                  scrollDirection: Axis.horizontal,
+                  child: Container(
+                    constraints: BoxConstraints(minWidth: gapW - 40),
+                    child: Wrap(
+                      direction: Axis.horizontal,
+                      alignment: WrapAlignment.spaceBetween,
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: Text(
+                            'Submitted',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 1
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 1,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 1;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(1);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 1 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'Not submitted',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 2
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 2,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 2;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(2);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 2 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'All students',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 3
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 3,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 3;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(3);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 3 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'Late submitted',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 4
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 4,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 4;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(4);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 4 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'Before time',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 5
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 5,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 5;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(5);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 5 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'Unchecked',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 6
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 6,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 6;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(6);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 6 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                        ChoiceChip(
+                          label: Text(
+                            'Checked',
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: chipIndex == 7
+                                    ? Colors.blue[600]
+                                    : colors[7]),
+                          ),
+                          selected: chipIndex == 7,
+                          onSelected: (a) {
+                            if (a) {
+                              setState(() {
+                                chipIndex = 7;
+                              });
+                              Provider.of<DataAllClasses>(context,
+                                      listen: false)
+                                  .filter(7);
+                            }
+                          },
+                          pressElevation: 0,
+                          elevation: 0,
+                          backgroundColor: colors[6],
+                          shape: RoundedRectangleBorder(
+                              side: BorderSide(
+                                  color:
+                                      chipIndex == 7 ? Colors.blue : colors[5],
+                                  width: 0.6),
+                              borderRadius: BorderRadius.circular(100)),
+                        ),
+                      ],
                     ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: ClampingScrollPhysics(),
-                    itemCount: Provider.of<DataAllClasses>(context).ans.length,
-                    itemBuilder: (context, index) => tileInfo(
-                        context,
-                        index,
-                        widget.classID,
-                        Provider.of<DataAllClasses>(context, listen: false)
-                            .assign[widget.idx][0]),
                   ),
-          ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 5, right: 5, top: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Student name',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            'Status',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(
+                        height: 25,
+                        thickness: 1.7,
+                      ),
+                    ],
+                  ),
+                ),
+                isLoad || Provider.of<DataAllClasses>(context).filterL.isEmpty
+                    ? Container(
+                        constraints: BoxConstraints(minHeight: gapH * 0.4),
+                        width: double.infinity,
+                        child: Center(
+                          child: Image.asset(
+                            resourceHelper[8],
+                            width: 200,
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: ClampingScrollPhysics(),
+                        itemCount:
+                            Provider.of<DataAllClasses>(context).filterL.length,
+                        itemBuilder: (context, index) => tileInfo(
+                            context,
+                            index,
+                            widget.classID,
+                            Provider.of<DataAllClasses>(context, listen: false)
+                                .assign[widget.idx][0],
+                            chipIndex),
+                      ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-tileInfo(context, index, classID, assID) {
+tileInfo(context, index, classID, assID, chipIndex) {
   return GestureDetector(
     onTap: () {
-      updateMark(context, index, classID, assID,
-          Provider.of<DataAllClasses>(context, listen: false).ans[index][0]);
+      if (Provider.of<DataAllClasses>(context, listen: false)
+              .filterL[index]
+              .length ==
+          7)
+        updateMark(
+            context,
+            index,
+            classID,
+            assID,
+            Provider.of<DataAllClasses>(context, listen: false).filterL[index]
+                [6],
+            chipIndex);
     },
     behavior: HitTestBehavior.translucent,
     child: Column(
@@ -2100,32 +2778,71 @@ tileInfo(context, index, classID, assID) {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Padding(
-                  padding: EdgeInsets.only(
-                    left: 4,
-                    right: 15,
+            Expanded(
+              child: Row(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: 4,
+                      right: 15,
+                    ),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white,
+                      backgroundImage: Provider.of<DataAllClasses>(context)
+                                  .filterL[index][1] ==
+                              null
+                          ? AssetImage(resourceHelper[2])
+                          : NetworkImage(
+                              '${Provider.of<DataAllClasses>(context).filterL[index][1]}'),
+                    ),
                   ),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.white,
-                    backgroundImage: Provider.of<DataAllClasses>(context)
-                                .ans[index][6] ==
-                            null
-                        ? AssetImage(resourceHelper[2])
-                        : NetworkImage(
-                            '${Provider.of<DataAllClasses>(context).ans[index][6]}'),
+                  Flexible(
+                    child: Text(
+                        '${Provider.of<DataAllClasses>(context).filterL[index][0]}'),
                   ),
-                ),
-                Text('${Provider.of<DataAllClasses>(context).ans[index][5]}'),
-              ],
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.only(right: 10),
-              child: Text(Provider.of<DataAllClasses>(context).ans[index][4]
-                  ? '${Provider.of<DataAllClasses>(context).ans[index][2]}'
-                  : 'Unchecked'),
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Provider.of<DataAllClasses>(context)
+                                .filterL[index]
+                                .length ==
+                            3
+                        ? Text(
+                            'Not submitted',
+                            style: TextStyle(color: Colors.red),
+                          )
+                        : Provider.of<DataAllClasses>(context).filterL[index][5]
+                            ? Text(
+                                '${Provider.of<DataAllClasses>(context).filterL[index][3]}',
+                              )
+                            : Text(
+                                'Unchecked',
+                                style: TextStyle(
+                                    // color: Colors.yellow[800]
+                                    ),
+                              ),
+                  ),
+                  Provider.of<DataAllClasses>(context).filterL[index].length ==
+                          3
+                      ? Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.red,
+                        )
+                      : Provider.of<DataAllClasses>(context).filterL[index][5]
+                          ? Icon(Icons.check_circle, color: Colors.blue)
+                          : Icon(
+                              Icons.info,
+                              color: Colors.yellow[700],
+                            ),
+                ],
+              ),
             ),
           ],
         ),
@@ -2139,7 +2856,7 @@ tileInfo(context, index, classID, assID) {
   );
 }
 
-updateMark(BuildContext context, idx, classID, assID, ansID) async {
+updateMark(BuildContext context, idx, classID, assID, ansID, chipIndex) async {
   bool isL = false;
   int marks;
   return showDialog(
@@ -2157,7 +2874,8 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
             titlePadding: EdgeInsets.only(left: 30, top: 30),
             // insetPadding: EdgeInsets.symmetric(vertical: gapH * 0.3),
             // actionsPadding: EdgeInsets.zero,
-            title: Text('${Provider.of<DataAllClasses>(context).ans[idx][5]}',
+            title: Text(
+                '${Provider.of<DataAllClasses>(context).filterL[idx][0]}',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
             content: Wrap(
               children: [
@@ -2187,13 +2905,13 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                                     const EdgeInsets.symmetric(horizontal: 5),
                                 child: Text(
                                   Provider.of<DataAllClasses>(context)
-                                          .ans[idx][1]
+                                          .filterL[idx][2]
                                           .toString()
                                           .contains('answers')
                                       ? Provider.of<DataAllClasses>(context)
-                                          .ans[idx][1]
+                                          .filterL[idx][2]
                                           .toString()
-                                          .substring(49)
+                                          .substring(57)
                                       : '',
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(),
@@ -2212,7 +2930,7 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                               context,
                               Provider.of<DataAllClasses>(context,
                                       listen: false)
-                                  .ans[idx][1]);
+                                  .filterL[idx][2]);
                         },
                         child: Text(
                           'View',
@@ -2225,15 +2943,16 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                 TextField(
                   keyboardType: TextInputType.number,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(4),
+                    LengthLimitingTextInputFormatter(5),
                     FilteringTextInputFormatter.allow(
                       RegExp('[0-9]'),
                     ),
                   ],
                   decoration: InputDecoration(
                     labelText: 'Marks obtained',
-                    hintText: Provider.of<DataAllClasses>(context).ans[idx][4]
-                        ? '${Provider.of<DataAllClasses>(context).ans[idx][2]}'
+                    hintText: Provider.of<DataAllClasses>(context).filterL[idx]
+                            [5]
+                        ? '${Provider.of<DataAllClasses>(context).filterL[idx][3]}'
                         : null,
                   ),
                   onChanged: (value) {
@@ -2249,7 +2968,7 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                         'Submission:',
                       ),
                       Text(
-                        Provider.of<DataAllClasses>(context).ans[idx][3]
+                        Provider.of<DataAllClasses>(context).filterL[idx][4]
                             ? 'Late'
                             : 'Before time',
                       ),
@@ -2317,8 +3036,8 @@ updateMark(BuildContext context, idx, classID, assID, ansID) async {
                                 int res = await Provider.of<DataAllClasses>(
                                         context,
                                         listen: false)
-                                    .updateMarks(
-                                        context, marks, classID, assID, ansID);
+                                    .updateMarks(context, marks, classID, assID,
+                                        ansID, chipIndex);
                                 if (res > -10) {
                                   reset(() {
                                     isL = false;
@@ -2481,7 +3200,7 @@ class _UploadWorkState extends State<UploadWork> {
                                                     context)
                                                 .assign[widget.idx][5]
                                                 .toString()
-                                                .substring(52)
+                                                .substring(60)
                                             : '',
                                         style: TextStyle(),
                                         overflow: TextOverflow.ellipsis,
@@ -2601,7 +3320,7 @@ class _UploadWorkState extends State<UploadWork> {
                                                             context)
                                                         .ans[0][1]
                                                         .toString()
-                                                        .substring(49)
+                                                        .substring(57)
                                                     : '',
                                                 style: TextStyle(),
                                                 overflow: TextOverflow.ellipsis,
@@ -2779,73 +3498,75 @@ pdfView(context, String url) {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (_) => PDF().cachedFromUrl(url,
-          maxNrOfCacheObjects: 6,
-          placeholder: (p) => Scaffold(
-                appBar: AppBar(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  iconTheme: IconThemeData(color: colors[5]),
-                ),
-                backgroundColor: colors[6],
-                body: Center(
-                    child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      child: Text(
-                        'Progress: $p%',
-                        style: TextStyle(fontSize: 25),
-                      ),
-                    ),
-                    CircularProgressIndicator(
-                      value: p / 100,
-                    )
-                  ],
-                )),
-              ),
-          errorWidget: (e) {
-            Fluttertoast.showToast(msg: 'Cant\'t load PDF!');
-            return Scaffold(
-              appBar: AppBar(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                automaticallyImplyLeading: false,
-              ),
-              backgroundColor: colors[6],
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 30),
-                      child: Text(
-                        e.toString(),
-                        style: TextStyle(fontSize: 18),
-                      ),
-                    ),
-                    FlatButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Fluttertoast.showToast(msg: 'Sorry for inconvenience');
-                      },
-                      child: Text(
-                        'Close',
-                        style: TextStyle(color: colors[6]),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      color: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                    ),
-                  ],
+      builder: (_) => PDF().cachedFromUrl(
+        url,
+        maxNrOfCacheObjects: 6,
+        placeholder: (p) => Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            iconTheme: IconThemeData(color: colors[5]),
+          ),
+          backgroundColor: colors[6],
+          body: Center(
+              child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Text(
+                  'Progress: $p%',
+                  style: TextStyle(fontSize: 25),
                 ),
               ),
-            );
-          }),
+              CircularProgressIndicator(
+                value: p / 100,
+              )
+            ],
+          )),
+        ),
+        errorWidget: (e) {
+          Fluttertoast.showToast(msg: 'Cant\'t load PDF!');
+          return Scaffold(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              automaticallyImplyLeading: false,
+            ),
+            backgroundColor: colors[6],
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 30),
+                    child: Text(
+                      e.toString(),
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  FlatButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Fluttertoast.showToast(msg: 'Sorry for inconvenience');
+                    },
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: colors[6]),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     ),
   );
 }

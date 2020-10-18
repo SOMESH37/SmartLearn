@@ -287,9 +287,11 @@ class Auth extends ChangeNotifier {
           () => tokenRefresh(_rtoken),
         );
       } else if (responseTR.statusCode == 401) {
-        this.token = null;
-        // isAuth = false;
-        // notifyListeners();
+        if (isAuth) {
+          this.token = null;
+          isAuth = false;
+          notifyListeners();
+        }
       } else {
         if (isAuth)
           Future.delayed(Duration(seconds: 10), () => tokenRefresh(_rtoken));
@@ -334,6 +336,7 @@ class Auth extends ChangeNotifier {
     final extractedUserData = json.decode(prefs.getString("userData"));
     print(extractedUserData);
     final tok = extractedUserData["refresh"];
+    _rtoken = tok;
     final res = await tokenRefresh(tok);
     data.clear();
     data.add([
@@ -346,5 +349,12 @@ class Auth extends ChangeNotifier {
       isAuth = true;
       notifyListeners();
     }
+  }
+
+  logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.clear();
+    isAuth = false;
+    notifyListeners();
   }
 }

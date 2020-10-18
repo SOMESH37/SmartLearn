@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:smartlearn/helper.dart';
 import '../helper.dart';
 import '../model/home_net.dart';
@@ -178,30 +179,94 @@ class _TodoState extends State<Todo> {
                                   ),
                                   trailing: PopupMenuButton(
                                     onSelected: (value) async {
-                                      setState(() {
-                                        isLoadd = true;
-                                      });
                                       if (value == 0) {
-                                        int res =
-                                            await Provider.of<DataAllClasses>(
-                                                    context,
-                                                    listen: false)
-                                                .deleteTodo(
-                                                    context,
-                                                    Provider.of<DataAllClasses>(
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: true,
+                                          builder: (cxt) {
+                                            return AlertDialog(
+                                              buttonPadding: EdgeInsets.zero,
+                                              actionsPadding: EdgeInsets.only(
+                                                  right: 20, bottom: 15),
+                                              title: Text('Make your choice'),
+                                              content: SingleChildScrollView(
+                                                child: Text(
+                                                    'Do you want to delete your task?'),
+                                              ),
+                                              actions: [
+                                                FlatButton(
+                                                  padding:
+                                                      EdgeInsets.only(right: 6),
+                                                  splashColor:
+                                                      Colors.transparent,
+                                                  child: Text(
+                                                    'Cancel',
+                                                    style: TextStyle(
+                                                      color: colors[7],
+                                                    ),
+                                                  ),
+                                                  onPressed: () {
+                                                    Navigator.pop(cxt);
+                                                  },
+                                                ),
+                                                FlatButton(
+                                                  onPressed: () async {
+                                                    Navigator.of(cxt).pop();
+                                                    Fluttertoast.showToast(
+                                                      msg:
+                                                          'Your request has been sent!',
+                                                    );
+                                                    setState(() {
+                                                      isLoadd = true;
+                                                    });
+                                                    int res = await Provider.of<
+                                                                DataAllClasses>(
                                                             context,
                                                             listen: false)
-                                                        .mytodo[index][0]);
-                                        if (res > -10 && mounted) {
-                                          setState(() {
-                                            isLoadd = false;
-                                          });
-                                          if (res == 200)
-                                            print('Deleted a todo');
-                                          else
-                                            showMyDialog(context, true,
-                                                'Something went wrong');
-                                        }
+                                                        .deleteTodo(
+                                                            context,
+                                                            Provider.of<DataAllClasses>(
+                                                                        context,
+                                                                        listen:
+                                                                            false)
+                                                                    .mytodo[
+                                                                index][0]);
+                                                    if (res > -10 && mounted) {
+                                                      setState(() {
+                                                        isLoadd = false;
+                                                      });
+                                                      if (res == 200)
+                                                        Fluttertoast.showToast(
+                                                          msg: 'Task deleted!',
+                                                        );
+                                                      else
+                                                        Fluttertoast.showToast(
+                                                          msg:
+                                                              'Sorry, can\'t establish a connection.',
+                                                        );
+                                                    }
+                                                  },
+                                                  padding: EdgeInsets.symmetric(
+                                                    horizontal: 20,
+                                                  ),
+                                                  child: Text(
+                                                    'Delete',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                  color: Colors.redAccent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            100),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
                                       } else
                                         print(value);
                                     },
@@ -274,7 +339,6 @@ class _AddToDoState extends State<AddToDo> {
       body: Padding(
         padding: EdgeInsets.fromLTRB(30, 15, 30, 5),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +362,7 @@ class _AddToDoState extends State<AddToDo> {
                   ),
                   maxLines: null,
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(50),
+                    LengthLimitingTextInputFormatter(46),
                     FilteringTextInputFormatter.allow(
                       RegExp('[a-z A-Z 0-9]'),
                     ),
@@ -327,6 +391,7 @@ class _AddToDoState extends State<AddToDo> {
                 ),
               ],
             ),
+            Spacer(),
             isLoaded
                 ? LinearProgressIndicator(
                     minHeight: 5,
